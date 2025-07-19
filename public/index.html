@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mi app de rifas</title>
+  </head>
+  <body>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <div id="walletBrick_container"></div>
+
+    <script>
+        const publicKey = "APP_USR-2a879f5d-62ff-4ef6-be33-a62015fa87a0";
+        const mp = new MercadoPago(publicKey);
+
+        const bricksBuilder = mp.bricks();
+
+        // Paso 1: Obtener preferenceId desde tu backend
+        async function obtenerPreferenceId() {
+            const response = await fetch('http://localhost:3000/crear-preferencia', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+            const data = await response.json();
+            return data.preference_id; // Asegurate de que tu backend devuelva esto
+        }
+
+        // Paso 2: Renderizar el Wallet Brick con el preferenceId
+        async function renderWalletBrickDinamico() {// Reemplazá con tu clave pública
+            const preferenceId = await obtenerPreferenceId();
+
+            await bricksBuilder.create("wallet", "walletBrick_container", {
+            initialization: {
+                preferenceId: preferenceId
+            },
+            callbacks: {
+                onReady: () => console.log("🟢 Wallet Brick listo"),
+                onError: (error) => console.error("❌ Error al renderizar Wallet:", error)
+            }
+            });
+        }
+
+        renderWalletBrickDinamico();
+    </script>
+    <h1>Bienvenido a mi app de rifas 🎟️</h1>
+    <p>Estamos trabajando para que puedas participar y ganar.</p>
+  </body>
+</html>
