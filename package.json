@@ -3,27 +3,27 @@
   "version": "1.0.0",
   "description": "Backend para sistema de rifas con pagos via MercadoPago",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "dev:frontend": "parcel index.html",
-    "build": "parcel build index.html",
-    "preview": "parcel serve dist/index.html"
+    "server": "node server/index.js",
+    "dev": "concurrently \"vite\" \"node server/index.js\"",
+    "client-dev": "vite",
+    "build": "vite build"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
     "body-parser": "^1.20.2",
-    "dotenv": "^16.3.1",
+    "dotenv": "^17.2.1",
     "express": "^4.18.2",
     "mercadopago": "^2.8.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "preact": "^10.26.9",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.7.0",
+    "@preact/preset-vite": "^2.10.2",
+    "concurrently": "^9.2.0",
     "nodemon": "^3.0.1",
-    "parcel": "^2.15.4",
-    "vite": "^7.0.5"
+    "tailwindcss": "^4.1.11",
+    "vite": "^7.0.6"
   },
-  "keywords": [],
-  "author": "",
+  "type": "module",
   "license": "MIT"
 }
