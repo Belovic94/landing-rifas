@@ -3,9 +3,8 @@ import path from 'path';
 
 // Base directory for data files (project root + server/data)
 const DATA_DIR = path.join(process.cwd(), 'server', 'data');
-const FILE_AVAILABLE = path.join(DATA_DIR, 'rifas_available.json');
-const FILE_PENDING = path.join(DATA_DIR, 'rifas_pending.json');
-const FILE_SOLD = path.join(DATA_DIR, 'rifas_sold.json');
+const FILE_TICKETS = path.join(DATA_DIR, 'tickets.json');
+const FILE_ORDERS = path.join(DATA_DIR, 'orders.json');
 
 export async function initStorage() {
   await ensureDataFiles();
@@ -13,7 +12,7 @@ export async function initStorage() {
 
 async function ensureDataFiles() {
   await fs.mkdir(DATA_DIR, { recursive: true });
-  const files = [FILE_AVAILABLE, FILE_PENDING, FILE_SOLD];
+  const files = [FILE_TICKETS, FILE_ORDERS];
   for (const filePath of files) {
     try {
       await fs.access(filePath);
@@ -37,30 +36,94 @@ async function writeJson(filePath, data) {
   await fs.writeFile(filePath, json, 'utf-8');
 }
 
-export async function getAvailableNumbers() {
-  return readJson(FILE_AVAILABLE, []);
+async function getAvailableNumbers() {
+  const tickets = await readJson(FILE_TICKETS, []);
+  return tickets.filter(ticket => ticket.status === 'AVAILABLE');
 }
 
-export async function setAvailableNumbers(numbers) {
-  await writeJson(FILE_AVAILABLE, numbers);
+async function setPendingNumbers(reservedTickets, anOrderId) {
+  const tickets = await readJson(FILE_TICKETS, []);
+  const numbers = reservedTickets.map(ticket => ticket.number);
+  
+  const updatedTickets = tickets.map(ticket => {
+    if (numbers.includes(ticket.number)) {
+      return { ...ticket, status: 'PENDING', orderId: anOrderId };
+    }
+    return ticket;
+  });
+
+  await writeJson(FILE_TICKETS, updatedTickets);
 }
 
-export async function getPendingEntries() {
-  return readJson(FILE_PENDING, []);
+async function setSoldNumbers(order) {
+  const tickets = await readJson(FILE_TICKETS, []);
+
+  const updatedTickets = tickets.map(ticket => {
+    if (ticket.orderId === order.id) {
+      return { ...ticket, status: 'SOLD'};
+    }
+    return ticket;
+  });
+
+  await writeJson(FILE_TICKETS, updatedTickets);
 }
 
-export async function setPendingEntries(entries) {
-  await writeJson(FILE_PENDING, entries);
+async function releaseNumbersByOrder(order) {
+  const tickets = await readJson(FILE_TICKETS, []);
+
+  const updatedTickets = tickets.map(ticket => {
+    if (ticket.orderId === order.id) {
+      return { ...ticket, status: 'AVAILABLE', orderId: null};
+    }
+    return ticket;
+  });
+
+  await writeJson(FILE_TICKETS, updatedTickets);
 }
 
-export async function appendSoldEntry(entry) {
-  const sold = await readJson(FILE_SOLD, []);
-  sold.push(entry);
-  await writeJson(FILE_SOLD, sold);
+async function getOrderById(orderId) {
+  const orders = await readJson(FILE_ORDERS, []);
+  return orders.find(order => order.id === orderId) || null;
 }
 
-export async function getSoldEntries() {
-  return readJson(FILE_SOLD, []);
+async function addOrder(orderId, reservedTickets) {
+  let orders = await readJson(FILE_ORDERS, []);
+
+  orders.push({
+    id: orderId,
+    status: 'PENDING',
+    numbers: reservedTickets.map(ticket => ticket.number),
+    createdAt: new Date().toISOString(),
+  });
+
+  await writeJson(FILE_ORDERS, orders);
+}
+
+async function invalidateOrder(order) {
+  let orders = await readJson(FILE_ORDERS, []);
+
+  const updatedOrders = orders.map(anOrder => {
+    if (anOrder.id === order.id) {
+      return { ...order, status: 'ERROR'};
+    }
+    return anOrder;
+  });
+
+  await writeJson(FILE_ORDERS, updatedOrders);
+}
+
+async function changeOrderStateToSold(order, extraData) {
+  let orders = await readJson(FILE_ORDERS, []);
+  let updateOrder = { ...order, ...extraData, status: 'SOLD'};
+  const updatedOrders = orders.map(anOrder => {
+    if (anOrder.id === order.id) {
+      return updateOrder;
+    }
+    return anOrder;
+  });
+
+  await writeJson(FILE_ORDERS, updatedOrders);
+  return updateOrder;
 }
 
 function getSelectionMode() {
@@ -68,71 +131,52 @@ function getSelectionMode() {
   return mode === 'random' ? 'random' : 'sequential';
 }
 
-function pickAndRemoveRandom(available, k) {
+function pickRandomTickets(availableNumbers, k) {
   // Partial Fisher-Yates shuffle to pick k items from the end
-  const n = available.length;
-  for (let i = n - 1; i >= n - k; i -= 1) {
+  const copy = [...availableNumbers];
+  const n = copy.length;
+
+  for (let i = n - 1; i >= n - k; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    const tmp = available[i];
-    available[i] = available[j];
-    available[j] = tmp;
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  const start = n - k;
-  const reserved = available.slice(start);
-  available.splice(start, k);
-  return reserved;
+
+  return copy.slice(n - k);
 }
 
-export async function reserveNumbersForPreference(externalRef, tickets) {
-  const available = await getAvailableNumbers();
-  if (available.length < tickets) {
+export async function reserveNumbersForPreference(orderId, tickets) {
+  const availableNumbers = await getAvailableNumbers();
+  if (availableNumbers.length < tickets) {
     const error = new Error('No hay suficientes rifas disponibles');
     error.code = 'INSUFFICIENT_STOCK';
     throw error;
   }
 
   const mode = getSelectionMode();
-  const reserved = mode === 'random' ? pickAndRemoveRandom(available, tickets) : available.splice(0, tickets);
+  const reservedNumbers = mode === 'random' ? pickRandomTickets(availableNumbers, tickets) : availableNumbers.splice(0, tickets);
 
-  await setAvailableNumbers(available);
-
-  const pending = await getPendingEntries();
-  pending.push({
-    id: externalRef,
-    numbers: reserved,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  });
-  await setPendingEntries(pending);
-  return reserved;
+  await setPendingNumbers(reservedNumbers);
+  await addOrder(orderId, reservedNumbers);
+  return reservedNumbers;
 }
 
-export async function releaseReservation(externalRef) {
-  const pending = await getPendingEntries();
-  const index = pending.findIndex((p) => p.id === externalRef);
-  if (index === -1) return;
-  const [entry] = pending.splice(index, 1);
-  await setPendingEntries(pending);
-  const available = await getAvailableNumbers();
-  const updated = [...entry.numbers, ...available];
-  await setAvailableNumbers(updated);
+export async function releaseReservation(orderId) {
+  const order = await getOrderById(orderId);
+  if (order) {
+    await releaseNumbersByOrder(order);
+    await invalidateOrder(order);
+  }
 }
 
-export async function confirmReservationAsSold(externalRef, extra = {}) {
-  const pending = await getPendingEntries();
-  const index = pending.findIndex((p) => p.id === externalRef);
-  if (index === -1) return null;
-  const [entry] = pending.splice(index, 1);
-  await setPendingEntries(pending);
-
-  const soldEntry = {
-    ...entry,
-    status: 'paid',
-    soldAt: new Date().toISOString(),
-    ...extra,
-  };
-  await appendSoldEntry(soldEntry);
-  return soldEntry;
+export async function confirmReservationAsSold(orderId, extraData = {}) {
+  const order = await getOrderById(orderId);
+  let soldOrder = null
+  if (order) {
+    await setSoldNumbers(order);
+    soldOrder = await changeOrderStateToSold(order, extraData);
+  }
+  return soldOrder;
 }
+  
 
 
