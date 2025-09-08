@@ -4,12 +4,14 @@ import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import {
-  initStorage,
-  reserveNumbersForPreference,
-  releaseReservation,
   confirmReservationAsSold,
 } from './storage.js';
 import { sendPurchaseEmail } from './mailer.js';
+import { getDb } from "./db.js";
+import { createTicketRepository } from "./repositories/ticketRepository.js";
+import { createTicketService } from "./services/ticketService.js";
+import { createOrderRepository } from "./repositories/orderRepository.js";
+import { createOrderService } from "./services/orderService.js";
 
 dotenv.config({ path: '.env.local' }); 
 
@@ -18,35 +20,49 @@ app.use(bodyParser.json());
 
 const client = new MercadoPagoConfig({ accessToken: process.env.ACCESS_TOKEN });
 const preference = new Preference(client);
+const db = getDb();
+
+// Tickets
+const ticketRepository = createTicketRepository(db);
+const ticketService = createTicketService(ticketRepository, db);
+
+// Orders
+const orderRepository = createOrderRepository(db);
+const orderService = createOrderService(orderRepository);
 
 const RIFA_PRICE = 10;
 
-const calcularRifas = (amount) => {
-  return amount / RIFA_PRICE;
-};
-
-(async () => {
+async function testDatabase() {
   try {
-    await initStorage();
-  } catch (error) {
-    console.error('Error inicializando archivos de datos', error);
+    const client = await db.connect();
+    console.log("✅ Conexión a la DB exitosa");
+
+    const { rows } = await client.query("SELECT COUNT(*) FROM tickets");
+    console.log(`🟢 Tickets totales en DB: ${rows[0].count}`);
+
+    client.release();
+  } catch (err) {
+    console.error("❌ Error conectando o testeando la DB:", err);
+    process.exit(1);
   }
-})();
+}
+
+await testDatabase();
 
 app.post('/create-preference', async (req, res) => {
-  const { amount } = req.body;
+  const { amount, email } = req.body;
 
   if (!amount || isNaN(amount)) {
     return res.status(400).json({ error: 'amount inválido o faltante' });
   }
 
   const ticketsAmount = Number(amount);
-  const externalRef = uuidv4();
+  const ticketOrderId = uuidv4();
 	let reservedTickets = null;
 
   try {
-    reservedTickets = await reserveNumbersForPreference(externalRef, ticketsAmount);
-		console.log("Random tickets are: ", reservedTickets);
+    reservedTickets = await ticketService.blockTickets(ticketsAmount, ticketOrderId);
+    console.log("Blocked tickets are: ", reservedTickets);
 	} catch (err) {
     if (err.code === 'INSUFFICIENT_STOCK') {
       return res.status(409).json({ error: 'No hay suficientes rifas disponibles' });
@@ -55,30 +71,31 @@ app.post('/create-preference', async (req, res) => {
     res.status(500).json({ error: 'Error al reservar rifas' });
   }
 
+  await orderService.createOrder(ticketOrderId, reservedTickets.map(ticket => ticket.id), email);
+
 	const aPreference = {
 		body: {
 			items: [
 				{
-					id: externalRef,
+					id: ticketOrderId,
 					category_id: 'tickets',
-					title: `Compra de ${ticketsAmount} rifas`,
-					quantity: ticketsAmount,
-					unit_price: parseFloat(RIFA_PRICE),
+					title: `BONO FAME: Compra de ${ticketsAmount} rifas`,
+					quantity: 1,
+					unit_price: parseFloat(RIFA_PRICE) * ticketsAmount,
 				},
 			],
-			external_reference: externalRef,
+			ticket_order_id: ticketOrderId
 		},
 	};
 
 	try {
 		const response = await preference.create(aPreference);
 		console.log(
-			`Create preference with init_point: ${response.init_point} and external_reference: ${externalRef}`
+			`Create preference with init_point: ${response.init_point} and ticket_order_id: ${ticketOrderId}`
 		);
 		res.status(200).json({ init_point: response.init_point});
 	} catch (err) {
-		// Rollback reservation if preference creation fails
-		await releaseReservation(externalRef);
+		await ticketService.releaseOrder(ticketOrderId);
 		console.error('Error creando preferencia', err);
 		res.status(500).send('Error');
 	}
@@ -91,30 +108,24 @@ app.post('/webhook', async (req, res) => {
   if (type === 'payment') {
     try {
       const payment = await new Payment(client).get({ id: data.id });
+      const ticketOrderId = payment?.ticket_order_id;
       console.log(
-        `Arrive payment with status: ${payment?.status} and external_reference: ${payment?.external_reference}`
+        `Arrive payment with status: ${payment?.status} and ticket_order_id: ${ticketOrderId}`
       );
 
-      const externalRef = payment?.external_reference;
-
       if (payment?.status === 'approved') {
-        const email = payment.payer?.email;
         const amount = payment.transaction_amount;
         const paymentId = payment.id;
 
-        const sold = await confirmReservationAsSold(externalRef, {
-          email,
-          amount,
-          paymentId,
-        });
-
-        if (!sold) {
-          console.warn(`No pending reservation found for externalRef ${externalRef}`);
+        const orderSold = await orderService.confirmOrder(ticketOrderId, paymentId, amount);
+        await ticketService.confirmOrder(ticketOrderId);
+        if (!orderSold) {
+          console.warn(`No pending reservation found for ticketOrderId ${ticketOrderId}`);
         } else {
-          console.log(`✅ Pago aprobado de ${email} por $${amount}`);
-          console.log(`🎟️ Rifas asignadas: ${sold.numbers?.length}`);
+          console.log(`✅ Pago aprobado de ${orderSold.email} por $${amount}`);
+          console.log(`🎟️ Rifas asignadas: ${orderSold.numbers?.length}`);
           try {
-            await sendPurchaseEmail({ to: email, numbers: sold.numbers, externalRef, amount });
+            await sendPurchaseEmail({ to: email, numbers: orderSold.numbers, ticketOrderId, amount });
           } catch (mailErr) {
             console.error('Error enviando email:', mailErr);
           }
@@ -122,8 +133,8 @@ app.post('/webhook', async (req, res) => {
       } else if (
         ['rejected', 'cancelled', 'expired'].includes(String(payment?.status || '').toLowerCase()) // TODO: Ver si estos son los estados correctos
       ) {
-        await releaseReservation(externalRef);
-        console.log(`🔁 Reserva liberada para externalRef ${externalRef} por estado ${payment?.status}`);
+        await ticketService.releaseOrder(ticketOrderId);
+        console.log(`🔁 Reserva liberada para ticketOrderId ${ticketOrderId} por estado ${payment?.status}`);
       }
       res.sendStatus(200);
       return;
