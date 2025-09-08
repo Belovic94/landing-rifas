@@ -10,6 +10,7 @@ import {
   confirmReservationAsSold,
 } from './storage.js';
 import { sendPurchaseEmail } from './mailer.js';
+import { createExpirationDate } from './utils.js';
 
 dotenv.config({ path: '.env.local' }); 
 
@@ -20,10 +21,6 @@ const client = new MercadoPagoConfig({ accessToken: process.env.ACCESS_TOKEN });
 const preference = new Preference(client);
 
 const RIFA_PRICE = 10;
-
-const calcularRifas = (amount) => {
-  return amount / RIFA_PRICE;
-};
 
 (async () => {
   try {
@@ -67,6 +64,8 @@ app.post('/create-preference', async (req, res) => {
 				},
 			],
 			external_reference: externalRef,
+      expires: true,
+      expires_at: createExpirationDate(2),
 		},
 	};
 
