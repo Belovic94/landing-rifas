@@ -1,5 +1,3 @@
-import React from "react";
-
 const prizes = [
   {
     place: '1er Premio',
