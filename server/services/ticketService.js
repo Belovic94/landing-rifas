@@ -17,7 +17,7 @@ export function createTicketService(ticketRepository, db) {
         await ticketRepository.blockTickets(ids, orderId, client);
 
         await client.query("COMMIT");
-        return { tickets };
+        return tickets;
       } catch (err) {
         await client.query("ROLLBACK");
         throw err;

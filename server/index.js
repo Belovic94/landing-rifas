@@ -12,6 +12,7 @@ import { createTicketRepository } from "./repositories/ticketRepository.js";
 import { createTicketService } from "./services/ticketService.js";
 import { createOrderRepository } from "./repositories/orderRepository.js";
 import { createOrderService } from "./services/orderService.js";
+import { createExpirationDate } from './utils.js';
 
 dotenv.config({ path: '.env.local' }); 
 
@@ -84,7 +85,9 @@ app.post('/create-preference', async (req, res) => {
 					unit_price: parseFloat(RIFA_PRICE) * ticketsAmount,
 				},
 			],
-			ticket_order_id: ticketOrderId
+			external_reference: ticketOrderId,
+      expires: true,
+      expiration_date_to: createExpirationDate(1),
 		},
 	};
 
@@ -108,7 +111,7 @@ app.post('/webhook', async (req, res) => {
   if (type === 'payment') {
     try {
       const payment = await new Payment(client).get({ id: data.id });
-      const ticketOrderId = payment?.ticket_order_id;
+      const ticketOrderId = payment?.external_reference;
       console.log(
         `Arrive payment with status: ${payment?.status} and ticket_order_id: ${ticketOrderId}`
       );
@@ -145,6 +148,11 @@ app.post('/webhook', async (req, res) => {
     }
   }
   res.sendStatus(404);
+});
+
+app.use((err, req, res, next) => {
+  console.error("Error en request:", err);
+  res.status(500).json({ error: "Ocurrió un error inesperado" });
 });
 
 const PORT = process.env.PORT || 3000;
