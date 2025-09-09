@@ -1,0 +1,17 @@
+[
+  {
+    "id": "a5743fae-82d0-4bf7-a5ea-af3146518ba1",
+    "status": "SOLD",
+    "numbers": [
+      "0006",
+      "0017",
+      "0011",
+      "0007",
+      "0010"
+    ],
+    "createdAt": "2025-08-12T03:08:26.960Z",
+    "email": "test_user_1571028782@testuser.com",
+    "amount": 50,
+    "paymentId": 121946239438
+  }
+]

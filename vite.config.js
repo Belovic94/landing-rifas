@@ -14,6 +14,9 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      ignored: ['**/server/**']
+    },
     open: '/src/index.html',
     proxy: {
       '/create-preference': 'http://localhost:3000',

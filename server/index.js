@@ -1,9 +1,18 @@
 import express from 'express';
-import path from 'path';
 import bodyParser from 'body-parser';
-import {MercadoPagoConfig, Payment, Preference} from 'mercadopago';
+import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  confirmReservationAsSold,
+} from './storage.js';
+import { sendPurchaseEmail } from './mailer.js';
+import { getDb } from "./db.js";
+import { createTicketRepository } from "./repositories/ticketRepository.js";
+import { createTicketService } from "./services/ticketService.js";
+import { createOrderRepository } from "./repositories/orderRepository.js";
+import { createOrderService } from "./services/orderService.js";
+import { createExpirationDate } from './utils.js';
 
 dotenv.config({ path: '.env.local' }); 
 
@@ -12,88 +21,138 @@ app.use(bodyParser.json());
 
 const client = new MercadoPagoConfig({ accessToken: process.env.ACCESS_TOKEN });
 const preference = new Preference(client);
+const db = getDb();
+
+// Tickets
+const ticketRepository = createTicketRepository(db);
+const ticketService = createTicketService(ticketRepository, db);
+
+// Orders
+const orderRepository = createOrderRepository(db);
+const orderService = createOrderService(orderRepository);
 
 const RIFA_PRICE = 10;
 
-const calcularRifas = (amount) => {
-	return amount / RIFA_PRICE;
+async function testDatabase() {
+  try {
+    const client = await db.connect();
+    console.log("✅ Conexión a la DB exitosa");
+
+    const { rows } = await client.query("SELECT COUNT(*) FROM tickets");
+    console.log(`🟢 Tickets totales en DB: ${rows[0].count}`);
+
+    client.release();
+  } catch (err) {
+    console.error("❌ Error conectando o testeando la DB:", err);
+    process.exit(1);
+  }
 }
 
+await testDatabase();
+
 app.post('/create-preference', async (req, res) => {
+  const { amount, email } = req.body;
 
-	const { amount } = req.body;
+  if (!amount || isNaN(amount)) {
+    return res.status(400).json({ error: 'amount inválido o faltante' });
+  }
 
-	if (!amount || isNaN(amount)) {
-    	return res.status(400).json({ error: 'amount inválido o faltante' });
-  	}
-	
-	const externalRef = uuidv4();
+  const ticketsAmount = Number(amount);
+  const ticketOrderId = uuidv4();
+	let reservedTickets = null;
 
-	// Generar un campo en la base que tenga externalRef 
-	// Los numeros de las rifas
-	// Poner el status
-	/* {
-		id: externalRef,
-		numbers:  [list de numeros]
-		status: Pending, Paid
-	}*/
+  try {
+    reservedTickets = await ticketService.blockTickets(ticketsAmount, ticketOrderId);
+    console.log("Blocked tickets are: ", reservedTickets);
+	} catch (err) {
+    if (err.code === 'INSUFFICIENT_STOCK') {
+      return res.status(409).json({ error: 'No hay suficientes rifas disponibles' });
+    }
+    console.error('Error reservando rifas', err);
+    res.status(500).json({ error: 'Error al reservar rifas' });
+  }
+
+  await orderService.createOrder(ticketOrderId, reservedTickets.map(ticket => ticket.id), email);
 
 	const aPreference = {
 		body: {
-			items: [{
-				id: externalRef,
-				category_id: "Rifas",
-				title: 'Bono FAME Argentina 2025',
-				quantity: Number(amount),
-				unit_price: parseFloat(RIFA_PRICE),
-			}],
-			external_reference: externalRef
-		}
-	}
+			items: [
+				{
+					id: ticketOrderId,
+					category_id: 'tickets',
+					title: `BONO FAME: Compra de ${ticketsAmount} rifas`,
+					quantity: 1,
+					unit_price: parseFloat(RIFA_PRICE) * ticketsAmount,
+				},
+			],
+			external_reference: ticketOrderId,
+      expires: true,
+      expiration_date_to: createExpirationDate(1),
+		},
+	};
 
 	try {
 		const response = await preference.create(aPreference);
-		console.log(`Create preference with init_point: ${response.init_point} and external_reference: ${externalRef}`);
-		res.json({ init_point: response.init_point });
+		console.log(
+			`Create preference with init_point: ${response.init_point} and ticket_order_id: ${ticketOrderId}`
+		);
+		res.status(200).json({ init_point: response.init_point});
 	} catch (err) {
+		await ticketService.releaseOrder(ticketOrderId);
 		console.error('Error creando preferencia', err);
 		res.status(500).send('Error');
 	}
+  
 });
 
 app.post('/webhook', async (req, res) => {
-  	const { type, data } = req.body;
+  const { type, data } = req.body;
 
-	if (type === 'payment') {
-		try {
-			const payment = await new Payment(client).get({id: data.id});
-			console.log(`Arrive payment with status: ${payment?.status} and external_reference: ${payment?.external_reference}`);
+  if (type === 'payment') {
+    try {
+      const payment = await new Payment(client).get({ id: data.id });
+      const ticketOrderId = payment?.external_reference;
+      console.log(
+        `Arrive payment with status: ${payment?.status} and ticket_order_id: ${ticketOrderId}`
+      );
 
-			if (payment?.status === 'approved') {
-				const email = payment.payer.email;
-				const amount = payment.transaction_amount;
-				const rifas = calcularRifas(amount);
+      if (payment?.status === 'approved') {
+        const amount = payment.transaction_amount;
+        const paymentId = payment.id;
 
-				//usuarios[info.id] = { email, rifas }; // HAY que agregar a la base.
-				// Buscar 
-
-				console.log(`✅ Pago aprobado de ${email} por $${amount}`);
-				console.log(`🎟️ Rifas asignadas: ${rifas}`);
-			}
-			res.sendStatus(200);
-			return;
-		} catch (err) {
-			console.error('Error consultando pago:', err);
-			res.sendStatus(err.status);
-			return;
-		}
-	}
-	res.sendStatus(404);
-
+        const orderSold = await orderService.confirmOrder(ticketOrderId, paymentId, amount);
+        await ticketService.confirmOrder(ticketOrderId);
+        if (!orderSold) {
+          console.warn(`No pending reservation found for ticketOrderId ${ticketOrderId}`);
+        } else {
+          console.log(`✅ Pago aprobado de ${orderSold.email} por $${amount}`);
+          console.log(`🎟️ Rifas asignadas: ${orderSold.numbers?.length}`);
+          try {
+            await sendPurchaseEmail({ to: email, numbers: orderSold.numbers, ticketOrderId, amount });
+          } catch (mailErr) {
+            console.error('Error enviando email:', mailErr);
+          }
+        }
+      } else if (
+        ['rejected', 'cancelled', 'expired'].includes(String(payment?.status || '').toLowerCase()) // TODO: Ver si estos son los estados correctos
+      ) {
+        await ticketService.releaseOrder(ticketOrderId);
+        console.log(`🔁 Reserva liberada para ticketOrderId ${ticketOrderId} por estado ${payment?.status}`);
+      }
+      res.sendStatus(200);
+      return;
+    } catch (err) {
+      console.error('Error consultando pago:', err);
+      res.sendStatus(err.status || 500);
+      return;
+    }
+  }
+  res.sendStatus(404);
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.use((err, req, res, next) => {
+  console.error("Error en request:", err);
+  res.status(500).json({ error: "Ocurrió un error inesperado" });
 });
 
 const PORT = process.env.PORT || 3000;
