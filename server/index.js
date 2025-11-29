@@ -33,6 +33,22 @@ const orderService = createOrderService(orderRepository);
 
 const RIFA_PRICE = 10;
 
+/**
+ * @param {number} ticketsAmount
+ * @returns {number} ticket unit price 
+ */
+function getTicketPrice(ticketsAmount) {
+  if (ticketsAmount >= 10) {
+    return 3000;
+  } else if (ticketsAmount >= 5) {
+    return 3500;
+  } else if (ticketsAmount >= 3) {
+    return 4000;
+  } else {
+    return 5000;
+  }
+}
+
 async function testDatabase() {
   try {
     const client = await db.connect();
@@ -82,7 +98,7 @@ app.post('/create-preference', async (req, res) => {
 					category_id: 'tickets',
 					title: `BONO FAME: Compra de ${ticketsAmount} rifas`,
 					quantity: 1,
-					unit_price: parseFloat(RIFA_PRICE) * ticketsAmount,
+					unit_price: getTicketPrice(ticketsAmount) * ticketsAmount,
 				},
 			],
 			external_reference: ticketOrderId,
