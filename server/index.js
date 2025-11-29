@@ -31,21 +31,29 @@ const ticketService = createTicketService(ticketRepository, db);
 const orderRepository = createOrderRepository(db);
 const orderService = createOrderService(orderRepository);
 
-const RIFA_PRICE = 10;
+// Ticket pricing tiers
+const TICKET_PRICE_SINGLE = 5000;
+const TICKET_PRICE_3_PLUS = 4000;
+const TICKET_PRICE_5_PLUS = 3500;
+const TICKET_PRICE_10_PLUS = 3000;
+
+const TICKET_TIER_3 = 3;
+const TICKET_TIER_5 = 5;
+const TICKET_TIER_10 = 10;
 
 /**
  * @param {number} ticketsAmount
  * @returns {number} ticket unit price 
  */
 function getTicketPrice(ticketsAmount) {
-  if (ticketsAmount >= 10) {
-    return 3000;
-  } else if (ticketsAmount >= 5) {
-    return 3500;
-  } else if (ticketsAmount >= 3) {
-    return 4000;
+  if (ticketsAmount >= TICKET_TIER_10) {
+    return TICKET_PRICE_10_PLUS;
+  } else if (ticketsAmount >= TICKET_TIER_5) {
+    return TICKET_PRICE_5_PLUS;
+  } else if (ticketsAmount >= TICKET_TIER_3) {
+    return TICKET_PRICE_3_PLUS;
   } else {
-    return 5000;
+    return TICKET_PRICE_SINGLE;
   }
 }
 
