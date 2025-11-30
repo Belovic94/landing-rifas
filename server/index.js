@@ -3,9 +3,6 @@ import bodyParser from 'body-parser';
 import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  confirmReservationAsSold,
-} from './storage.js';
 import { sendPurchaseEmail } from './mailer.js';
 import { getDb } from "./db.js";
 import { createTicketRepository } from "./repositories/ticketRepository.js";
@@ -29,7 +26,7 @@ const ticketService = createTicketService(ticketRepository, db);
 
 // Orders
 const orderRepository = createOrderRepository(db);
-const orderService = createOrderService(orderRepository);
+const orderService = createOrderService(orderRepository, ticketRepository, db);
 
 // Ticket pricing tiers
 const TICKET_PRICE_SINGLE = 5000;
@@ -112,6 +109,7 @@ app.post('/create-preference', async (req, res) => {
 			external_reference: ticketOrderId,
       expires: true,
       expiration_date_to: createExpirationDate(1),
+      notification_url: process.env.WEBHOOK_URL
 		},
 	};
 
@@ -144,15 +142,21 @@ app.post('/webhook', async (req, res) => {
         const amount = payment.transaction_amount;
         const paymentId = payment.id;
 
-        const orderSold = await orderService.confirmOrder(ticketOrderId, paymentId, amount);
-        await ticketService.confirmOrder(ticketOrderId);
-        if (!orderSold) {
-          console.warn(`No pending reservation found for ticketOrderId ${ticketOrderId}`);
+        const result = await orderService.confirmOrderAndTickets(ticketOrderId, paymentId, amount);
+        if (!result) {
+          console.warn(`No se pudo confirmar orden + tickets para ticketOrderId ${ticketOrderId}`);
         } else {
-          console.log(`✅ Pago aprobado de ${orderSold.email} por $${amount}`);
-          console.log(`🎟️ Rifas asignadas: ${orderSold.numbers?.length}`);
+          const { order, updatedTickets } = result;
+          console.log(`Order: ${JSON.stringify(order)}`);
+          console.log(`✅ Pago aprobado de ${order.email} por $${amount}`);
+          console.log(`🎟️ Rifas asignadas: ${order.numbers?.length} (updatedTickets=${JSON.stringify(order.numbers)})`);
           try {
-            await sendPurchaseEmail({ to: email, numbers: orderSold.numbers, ticketOrderId, amount });
+            await sendPurchaseEmail({
+              to: order.email,
+              numbers: order.numbers,
+              ticketOrderId,
+              amount,
+            });
           } catch (mailErr) {
             console.error('Error enviando email:', mailErr);
           }
