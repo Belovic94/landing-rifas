@@ -1,6 +1,18 @@
 import nodemailer from 'nodemailer';
 
-function createTransport() {
+const testAccount = await nodemailer.createTestAccount();
+
+const transporter = nodemailer.createTransport({
+  host: testAccount.smtp.host,
+  port: testAccount.smtp.port,
+  secure: testAccount.smtp.secure,
+  auth: {
+    user: testAccount.user,
+    pass: testAccount.pass,
+  }
+});
+
+/* function createTransport() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 465);
   const user = process.env.SMTP_USER;
@@ -16,7 +28,7 @@ function createTransport() {
     secure: port === 465, // 465 TLS implícito; 587 STARTTLS ni idea
     auth: { user, pass },
   });
-}
+} */
 
 function renderTemplate({ numbers, externalRef, amount }) {
   const orgName = process.env.ORG_NAME || 'FAME Argentina';
@@ -76,12 +88,13 @@ function renderTemplate({ numbers, externalRef, amount }) {
 
 export async function sendPurchaseEmail({ to, numbers, externalRef, amount }) {
   if (!to) return;
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const from = process.env.SMTP_FROM || 'FAME Argentina <no-reply@fame.org>';
   const bcc = process.env.ADMIN_EMAIL || undefined;
 
-  const transporter = createTransport();
+  /* const transporter = createTransport(); */
 
   const { subject, text, html } = renderTemplate({ numbers, externalRef, amount });
-  await transporter.sendMail({ from, to, bcc, subject, text, html });
+  const info = await transporter.sendMail({ from, to, bcc, subject, text, html });
+  console.log("Preview:", nodemailer.getTestMessageUrl(info));
 }
 
