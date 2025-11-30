@@ -2,7 +2,7 @@ import { useState, useEffect } from 'preact/hooks';
 import { TicketIcon} from '@heroicons/react/24/outline';
 
 export function TicketSection() {
-  const defaultAmount = [1, 5, 10, 20];
+  const defaultAmount = [1, 3, 5, 10, 20];
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState(null);
   
