@@ -1,11 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  /* Paleta de colores personalizada */
-  --color-rojo: #d97f76;
-  --color-verde: #5bc0a1;
-  --color-verde-oscuro: #119879;
-  --color-lila: #9592c0;
-  --color-negro: #231f20;
-  --color-amarillo: #e7a55f;
+  --color-red: #d97f76;
+  --color-green: #5bc0a1;
+  --color-green-dark: #119879;
+  --color-purple: #9592c0;
+  --color-black: #231f20;
+  --color-yellow: #e7a55f;
 }

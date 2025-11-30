@@ -44,7 +44,7 @@ export function TicketSection() {
   return (
     <div className="w-full p-4 bg-gray-100">
       <div className='w-full flex flex-col space-y-4 items-center max-w-sm mx-auto'>
-        <div class="grid grid-cols-2 [@media(min-width:425px)]:grid-cols-4 gap-3 w-full">
+        <div class="grid grid-cols-2 [@media(min-width:425px)]:grid-cols-5 gap-3 w-full">
           {defaultAmount.map((amount) => (
             <label
               key={amount}
