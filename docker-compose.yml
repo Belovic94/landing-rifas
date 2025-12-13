@@ -1,0 +1,30 @@
+services:
+  db-rifas:
+    image: postgres:15
+    container_name: rifas-db
+    environment:
+      POSTGRES_USER: ${RIFAS_DB_USER}
+      POSTGRES_PASSWORD: ${RIFAS_DB_PASSWORD}
+      POSTGRES_DB: ${RIFAS_DB_NAME}
+    ports:
+      - "5433:5432"  
+    volumes:
+      - rifas_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${RIFAS_DB_USER} -d $${RIFAS_DB_NAME}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  # opcional, para ver la DB desde el navegador
+  adminer-rifas:
+    image: adminer
+    container_name: adminer-rifas
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db-rifas
+
+volumes:
+  rifas_db_data:
