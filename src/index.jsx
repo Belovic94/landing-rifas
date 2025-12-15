@@ -7,6 +7,7 @@ import { AboutSection } from './components/AboutSection';
 import PrizesSection from './components/PrizesSection';
 import { SuccessPage } from './components/SuccessPage';
 import { ErrorPage } from './components/ErrorPage';
+import { PendingPage } from './components/PendingPage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -28,6 +29,10 @@ function App() {
 
   if (currentPath === '/success' || currentPath === '/success.html') {
     return <SuccessPage />;
+  }
+
+  if (currentPath === '/pending' || currentPath === '/pending.html') {
+    return <PendingPage />;
   }
 
   if (currentPath === '/error' || currentPath === '/error.html' || currentPath === '/failure' || currentPath === '/failure.html') {
