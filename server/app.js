@@ -74,7 +74,7 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 						await mailService.sendPurchaseEmail({
 							to: order.email,
 							numbers: order.tickets.filter(t => t.active).map(t => t.number),
-							ticketOrderId: orderId,
+							orderId,
 							amount,
 						});
 					} catch (mailErr) {

@@ -46,7 +46,7 @@ export function createMailService({ mode = "ethereal" } = {}) {
     return transporterPromise;
   }
 
-  function renderTemplate({ numbers, externalRef, amount }) {
+  function renderTemplate({ numbers, orderId, amount }) {
     const orgName = process.env.ORG_NAME || "FAME Argentina";
     const currency = process.env.CURRENCY_SYMBOL || "$";
     const numbersList = (numbers || []).join(" - ");
@@ -108,7 +108,7 @@ export function createMailService({ mode = "ethereal" } = {}) {
 
     const text =
       `GRACIAS por comprar nuestro bono\n\n` +
-      `Referencia: ${externalRef}\n` +
+      `Referencia: ${orderId}\n` +
       `Monto: ${currency}${amount}\n` +
       `Tus números asignados son: ${numbersList}\n\n` +
       `${drawInfo}\n\n` +
@@ -137,7 +137,7 @@ export function createMailService({ mode = "ethereal" } = {}) {
   }
 
   return {
-    async sendPurchaseEmail({ to, numbers, externalRef, amount }) {
+    async sendPurchaseEmail({ to, numbers, orderId, amount }) {
       if (!to || mode === "test") return;
 
       const transporter = await getTransporter();
@@ -147,7 +147,7 @@ export function createMailService({ mode = "ethereal" } = {}) {
 
       const { subject, text, html } = renderTemplate({
         numbers,
-        externalRef,
+        orderId,
         amount,
       });
 
