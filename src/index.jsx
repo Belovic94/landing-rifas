@@ -5,13 +5,36 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { AboutSection } from './components/AboutSection';
 import PrizesSection from './components/PrizesSection';
+import { SuccessPage } from './components/SuccessPage';
+import { ErrorPage } from './components/ErrorPage';
 
 function App() {
-	
-	useEffect(() => {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+
+    window.addEventListener('popstate', handleLocationChange);
+
+    handleLocationChange();
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
   }, []);
 
+  if (currentPath === '/success' || currentPath === '/success.html') {
+    return <SuccessPage />;
+  }
+
+  if (currentPath === '/error' || currentPath === '/error.html' || currentPath === '/failure' || currentPath === '/failure.html') {
+    return <ErrorPage />;
+  }
+
+  // Página principal
   return (
     <>
       <Header/>
