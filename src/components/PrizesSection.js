@@ -1,18 +1,32 @@
 const prizes = [
   {
-    place: '1er Premio',
-    description: '1 Orden de compra de $500.000 en Fravega',
-    // Puedes agregar una imagen real aquí si la tienes
+    place: '1º Premio',
+    description: '1 Televisor 50"',
     image: '',
   },
   {
-    place: '2do Premio',
-    description: '1 Tenis orbital + 1 Mochila Fame + 1 Toallon Fame.',
+    place: '2º Premio',
+    description: '1 Tablet Samsung Galaxy',
     image: '',
   },
   {
-    place: '3er Premio',
+    place: '3º Premio',
     description: '1 Olla Essen',
+    image: '',
+  },
+  {
+    place: '4º Premio',
+    description: '1 combo de juguetes',
+    image: '',
+  },
+  {
+    place: '5º Premio',
+    description: '1 Caja de productos Havanna',
+    image: '',
+  },
+  {
+    place: '6º Premio',
+    description: '1 Combo de reposera y bolso térmico',
     image: '',
   },
 ];
