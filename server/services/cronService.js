@@ -1,8 +1,8 @@
 // services/cronService.js
 export function createCronService({
   db,
-  orderRepo,
-  reservationRepo,
+  orderRepository,
+  reservationRepository,
   mercadoPagoService,
   // tuning
   batchSize = 50,
@@ -17,8 +17,8 @@ export function createCronService({
         await client.query("BEGIN");
 
         // Trae vencidas y las bloquea para que si tuvieras 2 instancias no las procesen ambas
-        const orders = await orderRepo.getPendingExpiredForUpdate(
-          { limit: batchSize },
+        const orders = await orderRepository.getExpiredPendingForUpdate(
+          batchSize,
           client
         );
 
@@ -42,7 +42,7 @@ export function createCronService({
             const amount = payment.transaction_amount;
             const paymentId = String(payment.id);
 
-            const changed = await orderRepo.markPaid(
+            const changed = await orderRepository.markPaid(
               order.id,
               paymentId,
               amount,
@@ -55,7 +55,7 @@ export function createCronService({
 
           if (mpStatus === "pending" || mpStatus === "in_process") {
             const paymentId = String(payment.id);
-            await orderRepo.addPendingPayment(order.id, paymentId, client);
+            await orderRepository.addPendingPayment(order.id, paymentId, client);
             stats.extended += 1;
             continue;
           }
@@ -66,9 +66,9 @@ export function createCronService({
               mpStatus === "cancelled" ? "CANCELLED" :
               "ERROR";
 
-            const changed = await orderRepo.markStatusIfPending(order.id, reason, client);
+            const changed = await orderRepository.markStatusIfPending(order.id, reason, client);
             if (changed === 1) {
-              await reservationRepo.releaseOrderTickets(order.id, reason , client);
+              await reservationRepository.releaseOrderTickets(order.id, reason , client);
               stats.released += 1;
             }
             continue;
@@ -76,9 +76,9 @@ export function createCronService({
 
           // Si no hay pago (payment=null) o status desconocido:
           // expirá “normal” y liberá, porque no hay señales de pago en MP.
-          const changed = await orderRepo.markStatusIfPending(order.id, "EXPIRED", client);
+          const changed = await orderRepository.markStatusIfPending(order.id, "EXPIRED", client);
           if (changed === 1) {
-            await reservationRepo.releaseOrderTickets(order.id, "EXPIRED", client);
+            await reservationRepository.releaseOrderTickets(order.id, "EXPIRED", client);
             stats.released += 1;
           }
         }

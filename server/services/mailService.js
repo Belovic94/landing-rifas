@@ -1,51 +1,59 @@
 // services/mailService.js
 import nodemailer from "nodemailer";
+import fs from "fs/promises";
+import path from "path";
 
 /**
- * Crea un mailService.
- *
  * modes:
- *  - "ethereal" (default): crea cuenta de prueba (dev)
- *  - "smtp": usa SMTP real (prod)
- *  - "test": no envía mails (tests)
+ *  - "file": guarda el mail en ./tmp/mails (dev sin red)
+ *  - "ethereal": (dev con red)
+ *  - "smtp": (prod con SMTP real)
+ *  - "test": no envía
  */
-export function createMailService({ mode = "ethereal" } = {}) {
+export function createMailService({ mode = "file" } = {}) {
   let transporterPromise = null;
 
   async function getTransporter() {
-    if (mode === "test") return null;
+    if (mode === "test" || mode === "file") return null;
 
     if (!transporterPromise) {
       transporterPromise = (async () => {
+        console.log("[MAIL] mode in getTransporter:", mode);
+
         if (mode === "smtp") {
-          return nodemailer.createTransport({
+          console.log("[MAIL] SMTP target:", process.env.SMTP_HOST, process.env.SMTP_PORT);
+          const t = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT),
             secure: process.env.SMTP_SECURE === "true",
-            auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            },
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
           });
+          console.log("[MAIL] transporter created (smtp)");
+          return t;
         }
 
-        // ethereal (dev)
         const testAccount = await nodemailer.createTestAccount();
-        return nodemailer.createTransport({
+        console.log("[MAIL] Ethereal account:", {
           host: testAccount.smtp.host,
           port: testAccount.smtp.port,
           secure: testAccount.smtp.secure,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
-          },
+          user: testAccount.user,
         });
+
+        const t = nodemailer.createTransport({
+          host: testAccount.smtp.host,
+          port: testAccount.smtp.port,
+          secure: testAccount.smtp.secure,
+          auth: { user: testAccount.user, pass: testAccount.pass },
+        });
+        console.log("[MAIL] transporter created (ethereal)");
+        return t;
       })();
     }
 
     return transporterPromise;
   }
-
+  
   function renderTemplate({ numbers, orderId, amount }) {
     const orgName = process.env.ORG_NAME || "FAME Argentina";
     const currency = process.env.CURRENCY_SYMBOL || "$";
@@ -136,8 +144,28 @@ export function createMailService({ mode = "ethereal" } = {}) {
     return { subject, text, html };
   }
 
+  async function writeMailToDisk({ to, from, bcc, subject, text, html, meta = {} }) {
+    const baseDir = process.env.MAIL_OUT_DIR || path.resolve(process.cwd(), "tmp", "mails");
+    await fs.mkdir(baseDir, { recursive: true });
+
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    const safeTo = String(to).replace(/[^a-z0-9@._-]/gi, "_");
+    const prefix = `${ts}__${safeTo}__${meta.orderId || "no-order"}`;
+
+    const htmlPath = path.join(baseDir, `${prefix}.html`);
+
+    await fs.writeFile(htmlPath, html, "utf8");
+
+    console.log("📧 Mail guardado:");
+    console.log(" - HTML:", htmlPath);
+
+    return htmlPath;
+  }
+
+
   return {
     async sendPurchaseEmail({ to, numbers, orderId, amount }) {
+      console.log("MailService mode:", mode);
       if (!to || mode === "test") return;
 
       const transporter = await getTransporter();
@@ -150,6 +178,21 @@ export function createMailService({ mode = "ethereal" } = {}) {
         orderId,
         amount,
       });
+
+      if (mode === "file") {
+        const htmlPath =  await writeMailToDisk({
+          to,
+          from,
+          bcc,
+          subject,
+          text,
+          html,
+          meta: { orderId, amount, numbersCount: numbers?.length ?? 0 },
+        });
+        const fileUrl = `file://${path.resolve(htmlPath)}`;
+        console.log(" - ABRIR (file):", fileUrl);
+        return;
+      }
 
       const info = await transporter.sendMail({
         from,

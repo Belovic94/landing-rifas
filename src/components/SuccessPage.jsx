@@ -1,6 +1,6 @@
 import { Header } from './Header';
 import { Footer } from './Footer';
-import PrizesSection from './PrizesSection';
+import { PrizesSection } from './PrizesSection';
 
 export function SuccessPage() {
   return (

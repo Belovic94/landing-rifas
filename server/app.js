@@ -56,7 +56,7 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 		if (type !== "payment") return res.sendStatus(404);
 
 		try {
-			const payment = await mercadoPagoService.getPaymentById({ id: data.id });
+			const payment = await mercadoPagoService.getPaymentById(data.id);
 			const orderId = payment?.external_reference;
 			const status = String(payment?.status || "").toLowerCase();
 
@@ -78,7 +78,16 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 							amount,
 						});
 					} catch (mailErr) {
-						console.error("Error enviando email:", mailErr);
+						console.error("Error enviando email:", {
+							message: mailErr?.message,
+							code: mailErr?.code,
+							errno: mailErr?.errno,
+							syscall: mailErr?.syscall,
+							host: mailErr?.host,
+							port: mailErr?.port,
+							response: mailErr?.response,
+							stack: mailErr?.stack,
+						});
 					}
 				}
 			}

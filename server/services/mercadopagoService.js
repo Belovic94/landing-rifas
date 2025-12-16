@@ -1,17 +1,23 @@
 import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 
-const client = new MercadoPagoConfig({ accessToken: process.env.ACCESS_TOKEN });
-const preferenceClient = new Preference(client);
-const paymentClient = new Payment(client);
-
 // services/mercadoPagoService.js
 
 export function createMercadoPagoService({
+  accessToken,
   webhookUrl,
   successUrl,
   pendingUrl,
   failureUrl,
 }) {
+
+  if (!accessToken) {
+    throw new Error("MercadoPago: accessToken missing (check env var).");
+  }
+
+  const client = new MercadoPagoConfig({ accessToken });
+  const preferenceClient = new Preference(client);
+  const paymentClient = new Payment(client);
+
   return {
     async createPreference({ orderId, ticketsAmount, totalPrice, expirationDateTo }) {
       const payload = {

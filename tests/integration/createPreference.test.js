@@ -25,8 +25,12 @@ test("POST /create-preference reserva tickets y devuelve init_point", async () =
     createPreference: async () => ({ init_point: "https://mp/init_point_fake" }),
     getPaymentById: async () => null,
   };
+  
+  const mailService = {
+    sendPurchaseEmail: async () => {}, // mock
+  };
 
-  const app = createApp({ orderService, mercadoPagoService });
+  const app = createApp({ orderService, mercadoPagoService, mailService });
 
   const res = await request(app)
     .post("/create-preference")
@@ -46,7 +50,12 @@ test("concurrencia: 2 reservas simultáneas no comparten tickets", async () => {
     createPreference: async () => ({ init_point: "https://mp/init_point_fake" }),
     getPaymentById: async () => null,
   };
-  const app = createApp({ orderService, mercadoPagoService });
+
+  const mailService = {
+		sendPurchaseEmail: async () => {}, // mock
+	};
+
+  const app = createApp({ orderService, mercadoPagoService, mailService });
 
   const [r1, r2] = await Promise.all([
     request(app).post("/create-preference").send({ amount: 5, email: "a@testA.com" }),
@@ -86,11 +95,11 @@ test("webhook approved marca PAID y tickets quedan activos", async () => {
     }),
   };
 
-	const mailerService = {
+	const mailService = {
 		sendPurchaseEmail: async () => {}, // mock
 	};
 
-  const app = createApp({ orderService, mercadoPagoService });
+  const app = createApp({ orderService, mercadoPagoService, mailService });
 
   const res = await request(app)
     .post("/webhook")

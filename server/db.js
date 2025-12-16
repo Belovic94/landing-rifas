@@ -7,7 +7,7 @@ export function getDb() {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV !== "prod" ? false : { rejectUnauthorized: false },
+      ssl: process.env.NODE_ENV === "prod" ? { rejectUnauthorized: false } : false,
     });
   }
   return pool;

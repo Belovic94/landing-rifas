@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
-export function createOrderService({ db, orderRepo, reservationRepo }) {
+export function createOrderService(db, orderRepo, reservationRepo) {
   return {
     async createPreferenceFlow(ticketsAmount, email, expiresAt) {
       const orderId = uuidv4();
