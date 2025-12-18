@@ -2,6 +2,7 @@
 import nodemailer from "nodemailer";
 import fs from "fs/promises";
 import path from "path";
+import { createSesService } from "./sesService.js";
 
 /**
  * modes:
@@ -12,9 +13,10 @@ import path from "path";
  */
 export function createMailService({ mode = "file" } = {}) {
   let transporterPromise = null;
+  const sesService = mode === "ses_api" ? createSesService() : null;
 
   async function getTransporter() {
-    if (mode === "test" || mode === "file") return null;
+    if (mode === "test" || mode === "file" || mode === "ses_api") return null;
 
     if (!transporterPromise) {
       transporterPromise = (async () => {
@@ -210,6 +212,21 @@ export function createMailService({ mode = "file" } = {}) {
         });
         const fileUrl = `file://${path.resolve(htmlPath)}`;
         console.log(" - ABRIR (file):", fileUrl);
+        return;
+      }
+
+      if (mode === "ses_api") {
+        console.log("[MAIL] sending via SES API");
+
+        await sesService.sendEmail({
+          from,
+          to,
+          bcc,
+          subject,
+          text,
+          html,
+        });
+
         return;
       }
 
