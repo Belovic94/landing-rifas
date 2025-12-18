@@ -89,7 +89,7 @@ export function createMailService({ mode = "file" } = {}) {
       "El sorteo se realizará el 6 de enero de 2026 por Lotería Nacional Nocturna.";
 
     const prizesRaw =
-      '1º Premio: 1 Televisor 50"|2º Premio: 1 Tablet Samsung Galaxy|3º Premio: 1 Olla Essen|4º Premio: 1 combo de juguetes|5º Premio: 1 Caja de productos Havanna|6º Premio: 1 Combo de reposera y bolso térmico';
+      '1º Premio: Orden de compra por un Televisor 50"|2º Premio: Orden de compra por una Tablet|3º Premio: 1 Olla Essen|4º Premio: 1 combo de juguetes|5º Premio: 1 Caja de productos Havanna|6º Premio: 1 Combo de reposera y bolso térmico';
 
     const prizes = prizesRaw
       .split("|")
@@ -98,8 +98,8 @@ export function createMailService({ mode = "file" } = {}) {
 
     const infoHtml =
       `<div style="margin:16px 0 8px">
-        <p style="margin:8px 0"><strong>¿Sabías que 1 de cada 40 personas en el mundo es portadora de AME?</strong></p>
-        <p style="margin:8px 0"><strong>¿Y que 1 de cada 6000 bebés nace con AME?</strong></p>
+        <p style="margin:8px 0"><strong>¿Sabías que cada 1 de cada 40/50 personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?</strong></p>
+        <p style="margin:8px 0"><strong>Y que, a nivel mundial, aproximadamente 1 de cada 10.000 bebés nace con AME, una condición que cambia para siempre la vida de una familia. </strong></p>
         
         <p style="margin:16px 0 8px">La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las neuronas motoras, esas que hacen posible que podamos hablar, caminar, respirar y tragar. Cuando estas neuronas se dañan, los músculos se debilitan y aparece la atrofia.</p>
         
@@ -122,6 +122,7 @@ export function createMailService({ mode = "file" } = {}) {
         
         <ul style="margin:8px 0 16px; padding-left:20px">
           <li style="margin:4px 0">✨ Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.</li>
+          <li style="margin:4px 0">✨ Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.</li>
           <li style="margin:4px 0">✨ Impulsamos un proyecto para lograr incluir la AME en la pesquisa a nivel nacional.</li>
           <li style="margin:4px 0">✨ Capacitamos a profesionales de la salud, enviando médicos argentinos a formarse con expertos internacionales.</li>
           <li style="margin:4px 0">✨ Traemos especialistas del exterior para seguir elevando el nivel de atención en nuestro país.</li>
@@ -132,12 +133,25 @@ export function createMailService({ mode = "file" } = {}) {
         AME no discrimina, y por eso tu ayuda es esencial.</p>
         
         <p style="margin:16px 0 8px; font-weight:bold">Juntos Somos Más.</p>
+        
+        <div style="margin:24px 0 16px; padding:16px; background-color:#f0f9ff; border-left:4px solid #3b82f6; border-radius:4px">
+          <p style="margin:8px 0; font-size:16px; line-height:1.6; color:#1e40af">
+            Porque cada gesto suma y cada historia abraza,<br />
+            con la compra del Bono de Reyes de Familias AME Argentina queremos regalarte un cuento infantil, pensado para compartir, imaginar y también colorear en familia.
+          </p>
+          <p style="margin:12px 0 8px">
+            <a href="https://fameargentina.org.ar/cuento-infantil/" 
+               style="display:inline-block; background-color:#3b82f6; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px">
+              📖 Descargar Cuento Infantil
+            </a>
+          </p>
+        </div>
        </div>`;
 
     const subject =`Tus números asignados - ${orgName}`;
 
     const text =
-      `GRACIAS por comprar nuestro bono\n\n` +
+      `¡Gracias por comprar nuestro bono!\n\n` +
       `Referencia: ${orderId}\n` +
       `Monto: ${currency}${amount}\n` +
       `Tus números asignados son: ${numbersList}\n\n` +

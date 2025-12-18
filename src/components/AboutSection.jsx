@@ -9,28 +9,23 @@ export function AboutSection() {
             Información sobre AME y el bono solidario
           </div>
 
-          <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-fame-black md:text-3xl">
-            ¿Sabías que <span className="text-fame-primary">1 de cada 40</span> personas en el mundo es portadora de AME?
-            <br className="hidden md:block" />
-            ¿Y que <span className="text-fame-primary">1 de cada 6000</span> bebés nace con AME?
+          <h2 className="mt-4 max-w-4xl text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight text-fame-black">
+            ¿Sabías que <span className="text-fame-primary">1 de cada 40/50</span> personas es portadora del gen que causa AME?
           </h2>
 
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-fame-black/80 md:text-lg">
-            La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las
-            neuronas motoras (las que nos permiten hablar, caminar, respirar y tragar). Cuando estas neuronas se dañan,
-            los músculos se debilitan y aparece la atrofia.
+          {/* Segundo dato como bloque liviano */}
+          <p className="mt-3 max-w-4xl text-base lg:text-lg text-fame-black/80">
+            A nivel mundial, aproximadamente{" "}
+            <span className="font-extrabold text-fame-primary">1 de cada 10.000</span>{" "}
+            bebés nace con AME.
+            <span className="text-fame-black/70"> Una condición que cambia para siempre la vida de una familia.</span>
           </p>
 
-          <div className="mt-6 max-w-3xl rounded-2xl bg-white p-5 ring-1 ring-fame-black/10">
-            <p className="leading-relaxed text-fame-black/90">
-              AME no pregunta de dónde venís, quién sos ni cuál es tu situación económica.
-              <br />
-              Por eso, <span className="font-extrabold text-fame-black">NECESITAMOS TU COLABORACIÓN</span>.
-            </p>
-            <p className="mt-2 text-fame-black/75">
-              Gracias a vos, el trabajo de FAME crece todos los días.
-            </p>
-          </div>
+          <p className="mt-4 max-w-3xl text-sm lg:text-base leading-relaxed text-fame-black/75">
+            La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las neuronas
+            motoras (las que nos permiten hablar, caminar, respirar y tragar). Cuando estas neuronas se dañan, los músculos se
+            debilitan y aparece la atrofia.
+          </p>
 
           <img
             src="/assets/rey-corona.png"
@@ -102,6 +97,7 @@ export function AboutSection() {
             <ul className="mt-4 space-y-3 text-fame-black/85">
               {[
                 "Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.",
+                "Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.",
                 "Impulsamos un proyecto para lograr incluir la AME en la pesquisa a nivel nacional.",
                 "Capacitamos a profesionales de la salud, enviando médicos argentinos a formarse con expertos internacionales.",
                 "Traemos especialistas del exterior para seguir elevando el nivel de atención en nuestro país.",
