@@ -1,14 +1,40 @@
 export function Header() {
   return (
-    <header
-      class="text-center shadow-sm"
-    >
-      <div className='bg-gray-900 text-white text-center py-5'>
-        <h1 class="text-4xl text-white font-bold">Familias AME Argentina</h1>
+    <header className="text-center shadow-sm">
+      {/* Barra institucional */}
+      <div className="bg-fame-green-dark text-white py-5">
+        <h1 className="text-2xl md:text-3xl font-bold">
+          Familias AME Argentina
+        </h1>
       </div>
-      <div className='py-60 bg-cover bg-center flex flex-col items-center justify-center' style={{ backgroundImage: "url('/assets/slide-cura.jpg')" }}>
-        <h2 class="text-white text-4xl md:text-6xl lg:text-7xl font-bold mb-4 drop-shadow-lg">Bono FAME ARGENTINA 2026</h2>
-      <h3 class="text-white text-2xl md:text-3xl lg:text-4xl drop-shadow-md">Juntos Somos Más</h3>
+
+      {/* Hero */}
+      <div
+        className="relative flex items-center justify-center bg-cover bg-center px-4 py-28 md:py-40"
+        style={{ backgroundImage: "url('/assets/slide-cura.jpg')" }}
+      >
+        {/* Gradiente SOLO para contraste */}
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/35 to-black/70" />
+
+        {/* Texto */}
+        <div className="relative z-10 max-w-5xl text-center">
+          <h2 className="
+            text-3xl md:text-5xl lg:text-6xl
+            font-extrabold text-white
+            drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]
+          ">
+            Bono FAME Argentina 2026
+          </h2>
+
+          <h3 className="
+            mt-4 text-xl md:text-2xl lg:text-3xl
+            font-semibold text-fame-accent
+            tracking-wide
+            drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]
+          ">
+            Juntos somos más
+          </h3>
+        </div>
       </div>
     </header>
   );

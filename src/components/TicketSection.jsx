@@ -36,7 +36,7 @@ export function TicketSection() {
     return "";
   }, [email, emailTouched]);
 
-const isEmailValid = EMAIL_RE.test(email);
+  const isEmailValid = EMAIL_RE.test(email);
 
   const selected = useMemo(() => {
     if (!amount) return null;
@@ -70,12 +70,12 @@ const isEmailValid = EMAIL_RE.test(email);
   };
 
   return (
-    <section className="w-full bg-slate-50 px-4 py-10">
-      <div className="mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h3 className="text-center text-lg font-semibold text-slate-800">
+    <section className="w-full bg-fame-green/10 px-4 py-10">
+      <div className="mx-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fame-black/10">
+        <h3 className="text-center text-lg font-semibold text-fame-black">
           Elegí tu cantidad de números
         </h3>
-        <p className="mt-1 text-center text-sm text-slate-500">
+        <p className="mt-1 text-center text-sm text-fame-black/70">
           Seleccioná una opción y dejá tu email para enviarte la confirmación.
         </p>
 
@@ -98,26 +98,21 @@ const isEmailValid = EMAIL_RE.test(email);
 
                 <div
                   className="
-                    relative flex h-[78px] flex-col items-center justify-center rounded-xl
-                    border border-slate-200 bg-white text-slate-700 shadow-sm
+                    relative flex h-[82px] flex-col items-center justify-center rounded-xl
+                    border border-fame-black/15 bg-white text-fame-black shadow-sm
                     transition-all duration-200
-                    hover:-translate-y-0.5 hover:border-blue-300 hover:shadow
-                    focus-within:ring-2 focus-within:ring-blue-500/30
-                    peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-800
+                    hover:-translate-y-0.5 hover:border-fame-primary/50 hover:shadow
+                    focus-within:ring-2 focus-within:ring-fame-soft/40
+                    peer-checked:border-fame-primary peer-checked:bg-fame-green/15 peer-checked:text-fame-black
                   "
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{a}</span>
-                    <TicketIcon className="h-5 w-5 text-blue-600" />
+                    <TicketIcon className="h-5 w-5 text-fame-primary" />
                   </div>
 
-                  {/* TOTAL (lo importante) */}
-                  <div className="mt-1 text-xs font-semibold text-slate-800">
-                    {formatARS(total)}
-                  </div>
-
-                  {/* opcional: unitario chiquito */}
-                  <div className="text-[10px] text-slate-500">
+                  {/* unitario chiquito */}
+                  <div className="text-[10px] text-fame-black">
                     {formatARS(unit)} c/u
                   </div>
                 </div>
@@ -127,23 +122,24 @@ const isEmailValid = EMAIL_RE.test(email);
         </div>
 
         {/* Resumen seleccionado */}
-        <div className="mt-5 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
+        <div className="mt-5 rounded-xl bg-fame-green/10 p-4 ring-1 ring-fame-black/10">
           {selected ? (
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-slate-800">
+                <div className="text-sm font-semibold text-fame-black">
                   Total a pagar: {formatARS(selected.total)}
                 </div>
-                <div className="mt-1 text-xs text-slate-600">
+                <div className="mt-1 text-xs text-fame-black/70">
                   {amount} números · {formatARS(selected.unit)} c/u
                 </div>
               </div>
-              <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 ring-1 ring-blue-200">
+
+              <div className="rounded-lg bg-fame-accent px-3 py-2 text-xs font-semibold text-fame-black ring-1 ring-fame-accent/40">
                 Seleccionado
               </div>
             </div>
           ) : (
-            <div className="text-sm text-slate-600">
+            <div className="text-sm text-fame-black/70">
               Elegí una cantidad para ver el total.
             </div>
           )}
@@ -151,30 +147,31 @@ const isEmailValid = EMAIL_RE.test(email);
 
         {/* Email */}
         <div className="mt-6">
-          <label htmlFor="email" className="block text-left text-sm font-medium text-slate-700">
+          <label htmlFor="email" className="block text-left text-sm font-medium text-fame-black">
             Email
           </label>
+
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               type="email"
               id="email"
               placeholder="Ingresá tu email..."
               className={`
-                w-full rounded-xl border bg-white px-4 py-3 text-slate-900
-                outline-none transition placeholder:text-slate-400
-                focus:ring-2 focus:ring-blue-500/20
+                w-full rounded-xl border bg-white px-4 py-3 text-fame-black
+                outline-none transition placeholder:text-fame-black/40
+                focus:ring-2 focus:ring-fame-soft/35
                 ${emailError
-                  ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                  : "border-slate-200 focus:border-blue-500"}
+                  ? "border-fame-danger focus:border-fame-danger focus:ring-fame-danger/25"
+                  : "border-fame-black/15 focus:border-fame-primary"}
               `}
               value={email}
               onChange={(e) => setEmail(e.target.value.trim())}
               onBlur={() => setEmailTouched(true)}
             />
-            
           </div>
+
           {emailError && (
-            <p className="mt-1 text-sm text-red-600">{emailError}</p>
+            <p className="mt-1 text-sm text-fame-danger">{emailError}</p>
           )}
         </div>
 
@@ -183,19 +180,23 @@ const isEmailValid = EMAIL_RE.test(email);
           onClick={handleClick}
           disabled={!amount || !isEmailValid}
           className="
-            mt-6 w-full rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white
+            mt-6 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white
             shadow-sm transition
-            hover:bg-blue-700 hover:shadow
+            bg-fame-primary hover:bg-fame-primary hover:shadow
             active:scale-[0.99]
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30
-            disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fame-soft/40
+            disabled:cursor-not-allowed disabled:bg-fame-black/30 disabled:text-white/80
           "
         >
           Comprar
         </button>
 
-        <p className="mt-3 text-center text-xs text-slate-500">
+        <p className="mt-3 text-center text-xs text-fame-black/60">
           Vas a ser redirigido a MercadoPago para completar el pago.
+        </p>
+
+        <p className="mt-2 text-center text-[11px] text-fame-black/55">
+          Si no te llega el mail, revisá spam/promociones.
         </p>
       </div>
     </section>

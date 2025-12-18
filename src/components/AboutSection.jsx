@@ -1,62 +1,73 @@
 export function AboutSection() {
   return (
-    <section className="bg-white">
-      <div className="max-w-6xl mx-auto px-6 py-12">
+    <section className="bg-fame-green/10">
+      <div className="mx-auto max-w-6xl px-6 py-12">
         {/* Header / Hook */}
-        <div className="mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-            <span className="text-base">💙</span>
+        <div className="relative mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-fame-soft/20 px-3 py-1 text-sm font-semibold text-fame-black ring-1 ring-fame-black/10">
+            <span className="text-base">💛</span>
             Información sobre AME y el bono solidario
           </div>
 
-          <h2 className="mt-4 text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900">
-            ¿Sabías que <span className="text-blue-700">1 de cada  40/50</span> personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?
-            <br className="hidden md:block" />
-            ¿Y que, a nivel mundial, <span className="text-blue-700">aproximadamente 1 de cada 10.000</span> bebés nace con AME? Una condición que cambia para siempre la vida de una familia. 
+          <h2 className="mt-4 max-w-4xl text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight text-fame-black">
+            ¿Sabías que <span className="text-fame-primary">1 de cada 40/50</span> personas es portadora del gen que causa AME?
           </h2>
 
-          <p className="mt-4 text-base md:text-lg text-gray-700 leading-relaxed max-w-3xl">
-            La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las
-            neuronas motoras (las que nos permiten hablar, caminar, respirar y tragar). Cuando estas neuronas se dañan,
-            los músculos se debilitan y aparece la atrofia.
+          {/* Segundo dato como bloque liviano */}
+          <p className="mt-3 max-w-4xl text-base lg:text-lg text-fame-black/80">
+            A nivel mundial, aproximadamente{" "}
+            <span className="font-extrabold text-fame-primary">1 de cada 10.000</span>{" "}
+            bebés nace con AME.
+            <span className="text-fame-black/70"> Una condición que cambia para siempre la vida de una familia.</span>
           </p>
 
-          <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5 max-w-3xl">
-            <p className="text-gray-800 leading-relaxed">
-              AME no pregunta de dónde venís, quién sos ni cuál es tu situación económica.
-              <br />
-              Por eso, <span className="font-bold text-gray-900">NECESITAMOS TU COLABORACIÓN</span>.
-            </p>
-            <p className="mt-2 text-gray-700">
-              Gracias a vos, el trabajo de FAME crece todos los días.
-            </p>
-          </div>
+          <p className="mt-4 max-w-3xl text-sm lg:text-base leading-relaxed text-fame-black/75">
+            La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las neuronas
+            motoras (las que nos permiten hablar, caminar, respirar y tragar). Cuando estas neuronas se dañan, los músculos se
+            debilitan y aparece la atrofia.
+          </p>
+
+          <img
+            src="/assets/rey-corona.png"
+            alt=""
+            aria-hidden="true"
+            className="
+              pointer-events-none select-none
+              hidden lg:block
+              absolute
+              right-0
+              -translate-y-[70%]
+              w-60
+              opacity-95
+              drop-shadow-lg
+            "
+          />
+
         </div>
 
         {/* Main content grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Card 1 */}
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fame-black/10">
+            <h3 className="text-lg font-extrabold text-fame-black">
               Este bono nos va a ayudar a
             </h3>
 
             <div className="mt-4 space-y-4">
-              <div className="rounded-xl bg-gray-50 p-4 border border-gray-200">
-                <p className="font-semibold text-gray-900">
+              <div className="rounded-xl bg-fame-accent/15 p-4 ring-1 ring-fame-accent/25">
+                <p className="font-semibold text-fame-black">
                   ✨ Impulsar y avanzar una investigación con el Dr. Alfredo Cáceres (IUCBC) sobre regeneración celular
                 </p>
-                <p className="mt-2 text-gray-700 leading-relaxed">
+                <p className="mt-2 leading-relaxed text-fame-black/80">
                   Ya viene dando muy buenos resultados y es clave que sigamos avanzando.
                 </p>
 
-                {/* Optional: hide heavy text behind details */}
                 <details className="mt-3">
-                  <summary className="cursor-pointer text-sm font-medium text-blue-700 hover:text-blue-800">
+                  <summary className="cursor-pointer text-sm font-semibold text-fame-primary hover:text-fame-green-dark">
                     Ver más detalles (reprogramación celular e iPS)
                   </summary>
 
-                  <div className="mt-3 text-sm text-gray-700 leading-relaxed space-y-3">
+                  <div className="mt-3 space-y-3 text-sm leading-relaxed text-fame-black/80">
                     <p>
                       La reprogramación celular permite convertir células de la piel en células madre pluripotentes
                       inducidas (iPS). Estas iPS pueden generar cualquier célula del cuerpo, incluyendo neuronas.
@@ -78,12 +89,12 @@ export function AboutSection() {
           </div>
 
           {/* Card 2 */}
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fame-black/10">
+            <h3 className="text-lg font-extrabold text-fame-black">
               Además, desde FAME
             </h3>
 
-            <ul className="mt-4 space-y-3 text-gray-800">
+            <ul className="mt-4 space-y-3 text-fame-black/85">
               {[
                 "Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.",
                 "Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.",
@@ -93,7 +104,7 @@ export function AboutSection() {
                 "Y muchas acciones más para estar cerca de nuestra comunidad.",
               ].map((text, idx) => (
                 <li key={idx} className="flex gap-3">
-                  <span className="mt-0.5 inline-flex h-6 w-6">
+                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center text-sm">
                     ✨
                   </span>
                   <p className="leading-relaxed">{text}</p>
@@ -104,30 +115,36 @@ export function AboutSection() {
         </div>
 
         {/* Closing */}
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-          <div className="md:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-            <p className="text-gray-800 leading-relaxed">
+        <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-fame-black/10 md:col-span-2">
+            <p className="leading-relaxed text-fame-black/85">
               Gracias de corazón por estar del otro lado.
               <br />
               AME no discrimina, y por eso tu ayuda es esencial.
             </p>
-            <p className="mt-4 font-semibold text-gray-900">Juntos Somos Más.</p>
+            <p className="mt-4 font-extrabold text-fame-black">Juntos Somos Más.</p>
           </div>
 
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 flex flex-col justify-between">
-            <p className="text-gray-900 font-bold leading-snug">
-              El sorteo se realizará el <span className="text-blue-800">6 de enero de 2026</span> por{" "}
-              <span className="text-blue-800">Lotería Nacional Nocturna</span>.
+          <div className="rounded-2xl bg-fame-green/15 p-6 ring-1 ring-fame-black/10">
+            <p className="font-extrabold leading-snug text-fame-black">
+              El sorteo se realizará el{" "}
+              <span className="text-fame-primary">6 de enero de 2026</span> por{" "}
+              <span className="text-fame-primary">Lotería Nacional Nocturna</span>.
             </p>
 
             <a
               href="https://www.fameargentina.com.ar"
-              className="mt-5 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-700 transition"
+              className="
+                mt-5 inline-flex w-full items-center justify-center rounded-xl
+                bg-fame-primary px-4 py-2.5 font-semibold text-white shadow-sm
+                hover:bg-fame-green-dark transition
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fame-soft/50
+              "
             >
               Ir a la página principal
             </a>
 
-            <p className="mt-3 text-xs text-gray-600">
+            <p className="mt-3 text-xs text-fame-black/70">
               Tu colaboración impulsa investigación, acompañamiento y capacitación.
             </p>
           </div>
