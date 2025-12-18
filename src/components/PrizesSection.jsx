@@ -7,9 +7,11 @@ const prizes = [
   { place: '6º Premio', description: '1 Combo de reposera y bolso térmico' },
 ];
 
-export function PrizesSection() {
+export function PrizesSection({ variant = "default" } = {}) {
+  const sectionBg = variant === "plain" ? "bg-transparent" : "bg-fame-green/10";
+  
   return (
-    <section className="bg-fame-green/10 px-5 py-14 text-center">
+    <section className={`${sectionBg} px-5 py-14 text-center`}>
       <h2 className="mb-3 text-3xl font-extrabold text-fame-black">
         Premios
       </h2>
