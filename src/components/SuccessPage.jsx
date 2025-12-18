@@ -4,55 +4,81 @@ import { PrizesSection } from './PrizesSection';
 
 export function SuccessPage() {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <section class="bg-white py-10 px-6 max-w-4xl mx-auto text-center">
-        <div class="mb-8">
-          <div class="text-6xl mb-4">✅</div>
-          <h1 class="text-4xl font-bold text-gray-900 mb-4">
-            ¡Gracias por tu compra!
-          </h1>
-          <p class="text-xl text-gray-700 mb-6">
-            Tu pago ha sido aprobado.
+
+      <main className="flex-1 bg-fame-green/10 px-6 py-12">
+        <div className="mx-auto max-w-4xl text-center">
+          {/* Estado */}
+          <div className="mb-10 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-fame-black/10">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-fame-green/15 ring-1 ring-fame-green/25">
+              <span className="text-3xl" aria-hidden="true">✅</span>
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-extrabold text-fame-black">
+              ¡Gracias por tu compra!
+            </h1>
+
+            <p className="mt-3 text-base md:text-lg text-fame-black/80">
+              Tu pago fue aprobado.
+            </p>
+          </div>
+
+          {/* Aviso importante */}
+          <div className="mx-auto mb-12 max-w-3xl rounded-2xl bg-fame-green/15 p-6 text-left ring-1 ring-fame-green/25">
+            <p className="text-base md:text-lg text-fame-black">
+              En los próximos minutos vas a recibir un email con los{" "}
+              <strong>números asignados</strong> a tu compra.
+            </p>
+            <p className="mt-2 text-sm md:text-base text-fame-black/80">
+              Revisá tu bandeja de entrada y también la carpeta de spam/promociones.
+            </p>
+          </div>
+
+          {/* Info sorteo */}
+          <div className="mb-12">
+            <h2 className="mb-3 text-2xl font-extrabold text-fame-black">
+              Información del sorteo
+            </h2>
+            <p className="text-base md:text-lg text-fame-black/85">
+              El sorteo se realizará el{" "}
+              <span className="font-semibold text-fame-primary">
+                6 de enero de 2026
+              </span>{" "}
+              por{" "}
+              <span className="font-semibold text-fame-primary">
+                Lotería Nacional Nocturna
+              </span>.
+            </p>
+          </div>
+
+          {/* Premios */}
+          <div className="mb-14">
+            <PrizesSection variant="plain" />
+          </div>
+
+          {/* CTA */}
+          <div className="mt-10">
+            <a
+              href="/"
+              className="
+                inline-flex items-center justify-center rounded-xl
+                bg-fame-primary px-6 py-3 text-sm font-semibold text-white
+                shadow-sm transition hover:bg-fame-green-dark
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fame-soft/50
+              "
+            >
+              Volver al inicio
+            </a>
+          </div>
+
+          <p className="mt-6 text-xs text-fame-black/60">
+            Gracias por apoyar a Familias AME Argentina 💛
           </p>
         </div>
+      </main>
 
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 text-left">
-          <p class="text-lg text-gray-800 mb-4">
-            Recibirás un email con los números asignados a tu compra.
-          </p>
-          <p class="text-lg text-gray-800">
-            <strong>Revisa tu bandeja de entrada (y spam) en los próximos minutos.</strong>
-          </p>
-        </div>
-
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">
-            Información del Sorteo
-          </h2>
-          <p class="text-lg text-gray-800 mb-4">
-            <strong>El sorteo se realizará el 6 de enero de 2026 por Lotería Nacional Nocturna.</strong>
-          </p>
-        </div>
-
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6">
-            Premios del Sorteo
-          </h2>
-          <PrizesSection />
-        </div>
-
-        <div class="mt-8">
-          <a
-            href="/"
-            class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded shadow inline-block"
-          >
-            Volver al inicio
-          </a>
-        </div>
-      </section>
       <Footer />
-    </>
+    </div>
   );
 }
-

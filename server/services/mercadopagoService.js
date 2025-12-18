@@ -26,7 +26,8 @@ export function createMercadoPagoService({
             {
               id: orderId,
               category_id: "tickets",
-              title: `BONO FAME: Compra de ${ticketsAmount} rifas`,
+              description: `Bono contribución FAME Argentina – ${ticketsAmount} números`,
+              title: "Bono contribución FAME Argentina",
               quantity: 1,
               unit_price: totalPrice,
             },
