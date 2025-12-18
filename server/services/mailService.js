@@ -10,13 +10,14 @@ import { createSesService } from "./sesService.js";
  *  - "ethereal": (dev con red)
  *  - "smtp": (prod con SMTP real)
  *  - "test": no envía
+ *  - "sesApi": (prod con api de amazon SES)
  */
 export function createMailService({ mode = "file" } = {}) {
   let transporterPromise = null;
-  const sesService = mode === "ses_api" ? createSesService() : null;
+  const sesService = mode === "sesApi" ? createSesService() : null;
 
   async function getTransporter() {
-    if (mode === "test" || mode === "file" || mode === "ses_api") return null;
+    if (mode === "test" || mode === "file" || mode === "sesApi") return null;
 
     if (!transporterPromise) {
       transporterPromise = (async () => {
@@ -215,7 +216,7 @@ export function createMailService({ mode = "file" } = {}) {
         return;
       }
 
-      if (mode === "ses_api") {
+      if (mode === "sesApi") {
         console.log("[MAIL] sending via SES API");
 
         await sesService.sendEmail({

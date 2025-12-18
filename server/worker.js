@@ -33,7 +33,7 @@ const mercadoPagoService = createMercadoPagoService({
 });
 
 // MailService
-const mailService = createMailService({ mode: process.env.NODE_ENV === "prod" ? "smtp" : process.env.MAIL_MODE || "file" });
+const mailService = createMailService({ mode: process.env.NODE_ENV === "prod" ? "sesApi" : process.env.MAIL_MODE || "file" });
 
 await initDatabase(db, false);
 
