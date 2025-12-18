@@ -10,7 +10,9 @@ import { createMailService } from './services/mailService.js';
 import { createCronService } from './services/cronService.js';
 import { createExpireOrdersCron } from './cron/expireOrderCron.js'
 
-dotenv.config({ path: '.env.local' }); 
+if (process.env.NODE_ENV !== "prod") {
+  dotenv.config({ path: ".env.local" });
+}
 
 const db = getDb();
 

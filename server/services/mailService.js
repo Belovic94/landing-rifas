@@ -55,16 +55,14 @@ export function createMailService({ mode = "file" } = {}) {
   }
   
   function renderTemplate({ numbers, orderId, amount }) {
-    const orgName = process.env.ORG_NAME || "FAME Argentina";
-    const currency = process.env.CURRENCY_SYMBOL || "$";
+    const orgName = "FAME Argentina";
+    const currency = "$";
     const numbersList = (numbers || []).join(" - ");
 
     const drawInfo =
-      process.env.DRAW_INFO ||
       "El sorteo se realizará el 6 de enero de 2026 por Lotería Nacional Nocturna.";
 
     const prizesRaw =
-      process.env.PRIZES ||
       '1º Premio: 1 Televisor 50"|2º Premio: 1 Tablet Samsung Galaxy|3º Premio: 1 Olla Essen|4º Premio: 1 combo de juguetes|5º Premio: 1 Caja de productos Havanna|6º Premio: 1 Combo de reposera y bolso térmico';
 
     const prizes = prizesRaw
@@ -73,7 +71,6 @@ export function createMailService({ mode = "file" } = {}) {
       .filter(Boolean);
 
     const infoHtml =
-      process.env.INFO_HTML ||
       `<div style="margin:16px 0 8px">
         <p style="margin:8px 0"><strong>¿Sabías que 1 de cada 40 personas en el mundo es portadora de AME?</strong></p>
         <p style="margin:8px 0"><strong>¿Y que 1 de cada 6000 bebés nace con AME?</strong></p>
@@ -111,8 +108,7 @@ export function createMailService({ mode = "file" } = {}) {
         <p style="margin:16px 0 8px; font-weight:bold">Juntos Somos Más.</p>
        </div>`;
 
-    const subject =
-      process.env.EMAIL_SUBJECT || `Tus números asignados - ${orgName}`;
+    const subject =`Tus números asignados - ${orgName}`;
 
     const text =
       `GRACIAS por comprar nuestro bono\n\n` +
@@ -170,7 +166,7 @@ export function createMailService({ mode = "file" } = {}) {
 
       const transporter = await getTransporter();
 
-      const from = process.env.SMTP_FROM || "FAME Argentina <no-reply@fame.org>";
+      const from = process.env.SMTP_FROM || "BONO NACIONAL Familias AME Argentina <bono@fameargentina.org.ar>";
       const bcc = process.env.ADMIN_EMAIL || undefined;
 
       const { subject, text, html } = renderTemplate({
