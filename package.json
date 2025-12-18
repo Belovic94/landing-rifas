@@ -4,6 +4,7 @@
   "description": "Backend para sistema de rifas con pagos via MercadoPago",
   "scripts": {
     "server": "node server/index.js",
+    "worker": "node server/worker.js",
     "dev": "NODE_ENV=development concurrently \"vite\" \"node server/index.js\"",
     "dev_reset": "NODE_ENV=development RESET_DB=true concurrently \"vite\" \"node server/index.js\"",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
