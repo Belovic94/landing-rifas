@@ -7,6 +7,7 @@ import { createMercadoPagoService } from "./services/mercadopagoService.js";
 import { createOrderService } from "./services/orderService.js";
 import { createCronService } from "./services/cronService.js";
 import { createExpireOrdersCron } from "./cron/expireOrderCron.js";
+import { createMailService } from "./services/mailService.js";
 
 // Solo cargar .env.local en dev
 if (process.env.NODE_ENV !== "prod") {
