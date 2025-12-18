@@ -5,28 +5,23 @@ export function createExpirationDate(minutes) {
   return expirationDate.toISOString();
 }
 
-// Ticket pricing tiers
-const TICKET_PRICE_SINGLE = 5000;
-const TICKET_PRICE_3_PLUS = 4000;
-const TICKET_PRICE_5_PLUS = 3500;
-const TICKET_PRICE_10_PLUS = 3000;
-
-const TICKET_TIER_3 = 3;
-const TICKET_TIER_5 = 5;
-const TICKET_TIER_10 = 10;
+// Tramos de precio (ordenados de MAYOR a MENOR cantidad)
+const TICKET_PRICE_TIERS = [
+  { min: 20, price: 3000 },
+  { min: 10, price: 3500 },
+  { min: 5,  price: 4000 },
+  { min: 3,  price: 4500 },
+  { min: 1,  price: 5000 },
+];
 
 /**
  * @param {number} ticketsAmount
- * @returns {number} ticket unit price 
+ * @returns {number} precio unitario del ticket
  */
 export function getTicketPrice(ticketsAmount) {
-  if (ticketsAmount >= TICKET_TIER_10) {
-    return TICKET_PRICE_10_PLUS;
-  } else if (ticketsAmount >= TICKET_TIER_5) {
-    return TICKET_PRICE_5_PLUS;
-  } else if (ticketsAmount >= TICKET_TIER_3) {
-    return TICKET_PRICE_3_PLUS;
-  } else {
-    return TICKET_PRICE_SINGLE;
-  }
+  const tier = TICKET_PRICE_TIERS.find(
+    ({ min }) => ticketsAmount >= min
+  );
+
+  return tier.price;
 }
