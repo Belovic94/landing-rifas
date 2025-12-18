@@ -10,9 +10,9 @@ export function AboutSection() {
           </div>
 
           <h2 className="mt-4 text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900">
-            ¿Sabías que <span className="text-blue-700">1 de cada 40</span> personas en el mundo es portadora de AME?
+            ¿Sabías que <span className="text-blue-700">1 de cada  40/50</span> personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?
             <br className="hidden md:block" />
-            ¿Y que <span className="text-blue-700">1 de cada 6000</span> bebés nace con AME?
+            ¿Y que, a nivel mundial, <span className="text-blue-700">aproximadamente 1 de cada 10.000</span> bebés nace con AME? Una condición que cambia para siempre la vida de una familia. 
           </h2>
 
           <p className="mt-4 text-base md:text-lg text-gray-700 leading-relaxed max-w-3xl">
@@ -86,6 +86,7 @@ export function AboutSection() {
             <ul className="mt-4 space-y-3 text-gray-800">
               {[
                 "Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.",
+                "Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.",
                 "Impulsamos un proyecto para lograr incluir la AME en la pesquisa a nivel nacional.",
                 "Capacitamos a profesionales de la salud, enviando médicos argentinos a formarse con expertos internacionales.",
                 "Traemos especialistas del exterior para seguir elevando el nivel de atención en nuestro país.",

@@ -1,12 +1,12 @@
 const prizes = [
   {
     place: '1º Premio',
-    description: '1 Televisor 50"',
+    description: 'Orden de compra por un Televisor 50"',
     image: '',
   },
   {
     place: '2º Premio',
-    description: '1 Tablet Samsung Galaxy',
+    description: 'Orden de compra por una Tablet',
     image: '',
   },
   {
