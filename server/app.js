@@ -9,9 +9,32 @@ function reqLog(label, extra = {}) {
   console.log(`[${label}]`, base);
 }
 
+const ALLOWED_ORIGINS = [
+  "https://bono2026.fameargentina.org.ar",
+  "http://localhost:5173", // dev (Vite)
+];
+
+
+
 export function createApp({ orderService, mercadoPagoService, mailService }) {
 
 	const app = express();
+
+	app.use(cors({
+		origin: function (origin, callback) {
+			if (!origin) return callback(null, true);
+
+			if (ALLOWED_ORIGINS.includes(origin)) {
+			return callback(null, true);
+			}
+
+			return callback(new Error("Not allowed by CORS"));
+		},
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+	}));
+
 	app.use(express.json());
 
 	app.post("/create-preference", async (req, res) => {
