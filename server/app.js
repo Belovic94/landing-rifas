@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { createExpirationDate, getTicketPrice } from './utils.js';
 
 function reqLog(label, extra = {}) {
