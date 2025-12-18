@@ -90,21 +90,27 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 	});
 
 	app.post("/webhook", async (req, res) => {
-		const startedAt = Date.now();
-		const { type, data } = req.body;
+		 const startedAt = Date.now();
 
-		reqLog("WEBHOOK_RECEIVED", {
-			type,
-			paymentId: data?.id,
-		});
+		const type =
+			req.body?.type ||
+			req.query?.type ||
+			req.query?.topic; // MP a veces usa topic=payment
 
-		if (type !== "payment") {
-			reqLog("WEBHOOK_IGNORED", { type });
-			return res.sendStatus(404);
+		const paymentId =
+			req.body?.data?.id ||
+			req.query?.["data.id"] ||
+			req.query?.id; // MP a veces manda id=...
+
+		reqLog("WEBHOOK_RECEIVED", { type, paymentId });
+
+		if (type !== "payment" || !paymentId) {
+			reqLog("WEBHOOK_IGNORED", { type, paymentId });
+			return res.sendStatus(200);
 		}
 
 		try {
-			const payment = await mercadoPagoService.getPaymentById(data.id);
+			const payment = await mercadoPagoService.getPaymentById(paymentId);
 			const orderId = payment?.external_reference;
 			const status = String(payment?.status || "").toLowerCase();
 
@@ -112,9 +118,9 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 
 			if (status === "approved") {
 				const amount = payment.transaction_amount;
-				const paymentId = payment.id;
+				const orderPaymentId = payment.id;
 
-				const { changed, order } = await orderService.handlePaymentApproved(orderId, paymentId, amount);
+				const { changed, order } = await orderService.handlePaymentApproved(orderId, orderPaymentId, amount);
 				reqLog("WEBHOOK_APPROVED_HANDLED", {
 					orderId,
 					changed,

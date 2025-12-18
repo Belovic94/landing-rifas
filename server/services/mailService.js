@@ -21,14 +21,37 @@ export function createMailService({ mode = "file" } = {}) {
         console.log("[MAIL] mode in getTransporter:", mode);
 
         if (mode === "smtp") {
-          console.log("[MAIL] SMTP target:", process.env.SMTP_HOST, process.env.SMTP_PORT);
+          const port = Number(process.env.SMTP_PORT || 587);
+          const secure = port === 465 || String(process.env.SMTP_SECURE).toLowerCase() === "true";
+          console.log("[MAIL] SMTP config:", {
+            host: process.env.SMTP_HOST,
+            port,
+            secure,
+            user: process.env.SMTP_USER ? "set" : "missing",
+            pass: process.env.SMTP_PASS ? "set" : "missing",
+            from: process.env.SMTP_FROM,
+          });
+          
+
           const t = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
-            port: Number(process.env.SMTP_PORT),
-            secure: process.env.SMTP_SECURE === "true",
+            port,
+            secure, // 465 true, 587 false
             auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+
+            // timeouts para fallar rápido y con info
+            connectionTimeout: 10_000,
+            greetingTimeout: 10_000,
+            socketTimeout: 20_000,
+
+            // TLS/SNI ayuda en algunos entornos
+            tls: {
+              servername: process.env.SMTP_HOST,
+            },
+
+            // para 587: asegura STARTTLS
+            requireTLS: port === 587,
           });
-          console.log("[MAIL] transporter created (smtp)");
           return t;
         }
 
