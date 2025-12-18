@@ -1,15 +1,30 @@
 import express from "express";
 import { createExpirationDate, getTicketPrice } from './utils.js';
 
+function reqLog(label, extra = {}) {
+  const base = {
+    ts: new Date().toISOString(),
+    ...extra,
+  };
+  console.log(`[${label}]`, base);
+}
+
 export function createApp({ orderService, mercadoPagoService, mailService }) {
 
 	const app = express();
 	app.use(express.json());
 
 	app.post("/create-preference", async (req, res) => {
+		const startedAt = Date.now();
 		const { amount, email } = req.body;
 
+		reqLog("CREATE_PREF_START", {
+			amount,
+			email
+		});
+
 		if (!amount || isNaN(amount)) {
+			reqLog("CREATE_PREF_BAD_REQUEST", { amount });
 			return res.status(400).json({ error: "amount inválido o faltante" });
 		}
 
@@ -22,11 +37,18 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 			const result = await orderService.createPreferenceFlow(ticketsAmount, email, expiresAt);
 
 			if (!result.ok && result.error === "INSUFFICIENT_STOCK") {
+				reqLog("CREATE_PREF_NO_STOCK", {
+					ticketsAmount,
+					durationMs: Date.now() - startedAt,
+				});
 				return res.status(409).json({ error: "No hay suficientes rifas disponibles" });
 			}
 
 			const { orderId, numbers } = result;
-			console.log("Blocked tickets are: ", numbers);
+			reqLog("CREATE_PREF_TICKETS_BLOCKED", {
+				orderId,
+				numbers: numbers.numbers
+			});
 
 			try {
 				const unitPrice = getTicketPrice(ticketsAmount);
@@ -38,22 +60,48 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 					totalPrice,
 					expirationDateTo: expiresAt,
 				});
+
+				reqLog("CREATE_PREF_SUCCESS", {
+					orderId,
+					initPoint: mpPref.init_point,
+					durationMs: Date.now() - startedAt,
+				});
 				return res.status(200).json({ init_point: mpPref.init_point });
 			} catch (mpErr) {
 				// si MP falla: liberar reserva + cancelar order
+
 				await orderService.onPreferenceCreateFailed(orderId);
+				reqLog("CREATE_PREF_MP_ERROR", {
+					orderId,
+					message: mpErr?.message,
+					durationMs: Date.now() - startedAt,
+				});
 				console.error("Error creando preferencia:", mpErr);
 				return res.status(500).send("Error");
 			}
 		} catch (err) {
-			console.error("Error en create-preference:", err);
+			reqLog("CREATE_PREF_ERROR", {
+				message: err?.message,
+				stack: err?.stack,
+				durationMs: Date.now() - startedAt,
+			});
 			return res.status(500).json({ error: "Error al reservar rifas" });
 		}
 	});
 
 	app.post("/webhook", async (req, res) => {
+		const startedAt = Date.now();
 		const { type, data } = req.body;
-		if (type !== "payment") return res.sendStatus(404);
+
+		reqLog("WEBHOOK_RECEIVED", {
+			type,
+			paymentId: data?.id,
+		});
+
+		if (type !== "payment") {
+			reqLog("WEBHOOK_IGNORED", { type });
+			return res.sendStatus(404);
+		}
 
 		try {
 			const payment = await mercadoPagoService.getPaymentById(data.id);
@@ -67,6 +115,10 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 				const paymentId = payment.id;
 
 				const { changed, order } = await orderService.handlePaymentApproved(orderId, paymentId, amount);
+				reqLog("WEBHOOK_APPROVED_HANDLED", {
+					orderId,
+					changed,
+				});
 
 				// mandás mail solo si pasó a PAID recién
 				if (changed === 1 && order) {
@@ -101,12 +153,23 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 				await orderService.handlePaymentFailedOrExpired(orderId, reason);
 			}
 
+			reqLog("WEBHOOK_DONE", {
+				orderId,
+				durationMs: Date.now() - startedAt,
+			});
+
 			return res.sendStatus(200);
 		} catch (err) {
-			console.error("Error webhook:", err);
+			reqLog("WEBHOOK_ERROR", {
+				message: err?.message,
+				stack: err?.stack,
+				durationMs: Date.now() - startedAt,
+			});
 			return res.sendStatus(err.status || 500);
 		}
 	});
+
+	app.get("/health-check", (_, res) => res.send("ok"));
 
 	return app;
 
