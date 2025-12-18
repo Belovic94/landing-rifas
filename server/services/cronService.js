@@ -3,6 +3,7 @@ export function createCronService({
   db,
   mercadoPagoService,
   orderService,
+  mailService,
   // tuning
   batchSize = 50,
 }) {

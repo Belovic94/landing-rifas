@@ -9,7 +9,7 @@ import { createCronService } from "./services/cronService.js";
 import { createExpireOrdersCron } from "./cron/expireOrderCron.js";
 
 // Solo cargar .env.local en dev
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "prod") {
   dotenv.config({ path: ".env.local" });
 }
 
@@ -31,6 +31,8 @@ const mercadoPagoService = createMercadoPagoService({
   failureUrl: process.env.MP_FAILURE_URL,
 });
 
+// MailService
+const mailService = createMailService({ mode: process.env.NODE_ENV === "prod" ? "smtp" : process.env.MAIL_MODE || "file" });
 
 await initDatabase(db, false);
 
@@ -38,6 +40,7 @@ const cronService = createCronService({
   db,
   mercadoPagoService,
   orderService,
+  mailService,
   batchSize: Number(process.env.CRON_BATCH_SIZE || 50),
 });
 
