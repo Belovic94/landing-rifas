@@ -77,12 +77,14 @@ export function createOrderService(db, orderRepo, reservationRepo) {
         await client.query("BEGIN");
 
         // Solo si estaba PENDING
-        await orderRepo.markStatusIfPending(orderId, reason, client);
+        const changed = await orderRepo.markStatusIfPending(orderId, reason, client);
 
-        // Liberar tickets (deja historial)
-        await reservationRepo.releaseOrderTickets(orderId, reason, client);
+        if (changed === 1) {
+          await reservationRepo.releaseOrderTickets(orderId, reason, client);
+        }
 
         await client.query("COMMIT");
+        return changed;
       } catch (e) {
         await client.query("ROLLBACK");
         throw e;
@@ -90,5 +92,13 @@ export function createOrderService(db, orderRepo, reservationRepo) {
         client.release();
       }
     },
+
+    async addPendingPayment(orderId, paymentId, client) {
+      return orderRepo.addPendingPayment(orderId, paymentId, client);
+    },
+
+    async getExpiredPendingForUpdate(limit, client) {
+      return orderRepo.getExpiredPendingForUpdate(limit, client);
+    }
   };
 }

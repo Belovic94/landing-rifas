@@ -1,9 +1,8 @@
 // services/cronService.js
 export function createCronService({
   db,
-  orderRepository,
-  reservationRepository,
   mercadoPagoService,
+  orderService,
   // tuning
   batchSize = 50,
 }) {
@@ -17,7 +16,7 @@ export function createCronService({
         await client.query("BEGIN");
 
         // Trae vencidas y las bloquea para que si tuvieras 2 instancias no las procesen ambas
-        const orders = await orderRepository.getExpiredPendingForUpdate(
+        const orders = await orderService.getExpiredPendingForUpdate(
           batchSize,
           client
         );
@@ -42,20 +41,40 @@ export function createCronService({
             const amount = payment.transaction_amount;
             const paymentId = String(payment.id);
 
-            const changed = await orderRepository.markPaid(
-              order.id,
-              paymentId,
-              amount,
-              client
-            );
+            const { changed, paidOrder } = await orderService.handlePaymentApproved(order.id, paymentId, amount);
 
-            if (changed === 1) stats.paid += 1;
+            if (changed === 1 && paidOrder) {
+              try {
+                await mailService.sendPurchaseEmail({
+                  to: paidOrder.email,
+                  numbers: paidOrder.tickets.filter(t => t.active).map(t => t.number),
+                  orderId: order.id,
+                  amount,
+                });
+              } catch (mailErr) {
+                console.error("Error enviando email:", {
+                  message: mailErr?.message,
+                  code: mailErr?.code,
+                  errno: mailErr?.errno,
+                  syscall: mailErr?.syscall,
+                  host: mailErr?.host,
+                  port: mailErr?.port,
+                  response: mailErr?.response,
+                  stack: mailErr?.stack,
+                });
+              }
+            }
             continue; // nunca liberar tickets si PAID
           }
 
           if (mpStatus === "pending" || mpStatus === "in_process") {
+            
             const paymentId = String(payment.id);
-            await orderRepository.addPendingPayment(order.id, paymentId, client);
+            console.log("Pending is: ", {
+              orderId: order.id,
+              paymentId
+            })
+            await orderService.addPendingPayment(order.id, paymentId, client);
             stats.extended += 1;
             continue;
           }
@@ -66,9 +85,8 @@ export function createCronService({
               mpStatus === "cancelled" ? "CANCELLED" :
               "ERROR";
 
-            const changed = await orderRepository.markStatusIfPending(order.id, reason, client);
+            const changed = await orderService.handlePaymentFailedOrExpired(order.id, reason, client);
             if (changed === 1) {
-              await reservationRepository.releaseOrderTickets(order.id, reason , client);
               stats.released += 1;
             }
             continue;
@@ -76,9 +94,8 @@ export function createCronService({
 
           // Si no hay pago (payment=null) o status desconocido:
           // expirá “normal” y liberá, porque no hay señales de pago en MP.
-          const changed = await orderRepository.markStatusIfPending(order.id, "EXPIRED", client);
+          const changed = await orderService.handlePaymentFailedOrExpired(order.id, "EXPIRED", client);
           if (changed === 1) {
-            await reservationRepository.releaseOrderTickets(order.id, "EXPIRED", client);
             stats.released += 1;
           }
         }
