@@ -20,7 +20,7 @@ export function PendingPage() {
             </h1>
 
             <p className="mt-3 text-base md:text-lg text-fame-black/80">
-              Tu pago está siendo procesado. En algunos casos puede demorar unos minutos.
+              Tu pago está siendo procesado. Esto podría demorar unos minutos.
             </p>
           </div>
 

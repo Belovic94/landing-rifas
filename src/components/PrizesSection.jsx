@@ -1,6 +1,6 @@
 const prizes = [
-  { place: '1º Premio', description: '1 Orden de compra para televisor 50"' },
-  { place: '2º Premio', description: '1 Orden de compra para Tablet' },
+  { place: '1º Premio', description: '1 Orden de compra por un Televisor 50"' },
+  { place: '2º Premio', description: '1 Orden de compra por una Tablet' },
   { place: '3º Premio', description: '1 Olla Essen' },
   { place: '4º Premio', description: '1 Combo de juguetes' },
   { place: '5º Premio', description: '1 Caja de productos Havanna' },
