@@ -113,18 +113,56 @@ export function createOrderRepository(db) {
       };
     },
 
-    async findExpiredOrders(client) {
+    async getAllOrders(client) {
       const executor = getExecutor(client);
+
       const { rows } = await executor.query(
         `
-        SELECT id
-        FROM orders
-        WHERE status = 'PENDING'
-          AND expires_at <= NOW()
-        ORDER BY expires_at ASC
+        SELECT
+          o.id, o.status, o.email, o.amount, o.payment_id, o.created_at, o.expires_at,
+          ot.ticket_number, ot.assigned_at, ot.released_at, ot.release_reason
+        FROM orders o
+        LEFT JOIN order_tickets ot
+          ON ot.order_id = o.id
+        ORDER BY o.created_at DESC, ot.assigned_at ASC, ot.ticket_number ASC
         `
       );
-      return rows.map(r => r.id);
-    }
+
+      if (!rows.length) return [];
+
+      // Agrupar por order_id
+      const byId = new Map();
+
+      for (const r of rows) {
+        let order = byId.get(r.id);
+
+        if (!order) {
+          order = {
+            id: r.id,
+            status: r.status,
+            email: r.email,
+            amount: r.amount,
+            paymentId: r.payment_id,
+            createdAt: r.created_at,
+            expiresAt: r.expires_at,
+            tickets: [],
+          };
+          byId.set(r.id, order);
+        }
+
+        if (r.ticket_number) {
+          order.tickets.push({
+            number: r.ticket_number.trim(),
+            assignedAt: r.assigned_at,
+            releasedAt: r.released_at,
+            releaseReason: r.release_reason,
+            active: r.released_at == null,
+          });
+        }
+      }
+
+      return Array.from(byId.values());
+    },
+
   };
 }
