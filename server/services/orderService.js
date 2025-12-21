@@ -11,13 +11,13 @@ export function createOrderService(db, orderRepo, reservationRepo) {
 
         await orderRepo.createOrder({ id: orderId, email, expiresAt }, client);
 
-        const numbers = await reservationRepo.reserveRandomTickets(
+        const { ok, numbers }  = await reservationRepo.reserveRandomTickets(
           orderId,
           ticketsAmount,
           client
         );
 
-        if (numbers.length < ticketsAmount) {
+        if (!ok) {
           // No hay stock suficiente → rollback para no dejar orden colgada
           await client.query("ROLLBACK");
           return { ok: false, error: "INSUFFICIENT_STOCK" };
@@ -99,6 +99,10 @@ export function createOrderService(db, orderRepo, reservationRepo) {
 
     async getExpiredPendingForUpdate(limit, client) {
       return orderRepo.getExpiredPendingForUpdate(limit, client);
+    },
+
+    async getOrders() {
+      return orderRepo.getAllOrders();
     }
   };
 }

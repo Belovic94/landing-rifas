@@ -71,7 +71,7 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 			const { orderId, numbers } = result;
 			reqLog("CREATE_PREF_TICKETS_BLOCKED", {
 				orderId,
-				numbers: numbers.numbers
+				numbers: numbers
 			});
 
 			try {
@@ -200,6 +200,23 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
 	});
 
 	app.get("/health-check", (_, res) => res.send("ok"));
+
+	app.get("/admin/orders", async (req, res) => {
+		try {
+			const orders = await orderService.getOrders();
+			return res.status(200).json({
+				ok: true,
+				total: orders.length,
+				items: orders,
+			});
+		} catch (err) {
+			console.error("[ADMIN_ORDERS]", err);
+			return res.status(500).json({
+				ok: false,
+				error: "INTERNAL_ERROR",
+			});
+		}
+	});
 
 	return app;
 
