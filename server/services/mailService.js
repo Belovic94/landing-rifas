@@ -89,7 +89,7 @@ export function createMailService({ mode = "file" } = {}) {
       "El sorteo se realizará el 6 de enero de 2026 por Lotería Nacional Nocturna.";
 
     const prizesRaw =
-      '1º Premio: Orden de compra por un Televisor 50"|2º Premio: Orden de compra por una Tablet|3º Premio: 1 Olla Essen|4º Premio: 1 combo de juguetes|5º Premio: 1 Caja de productos Havanna|6º Premio: 1 Combo de reposera y bolso térmico';
+      '1º Premio: 1 Orden de compra por un Televisor 50"|2º Premio: 1 Orden de compra por una Tablet|3º Premio: 1 Olla Essen|4º Premio: 1 combo de juguetes|5º Premio: 1 Caja de productos Havanna|6º Premio: 1 Combo de reposera y bolso térmico';
 
     const prizes = prizesRaw
       .split("|")
@@ -98,7 +98,7 @@ export function createMailService({ mode = "file" } = {}) {
 
     const infoHtml =
       `<div style="margin:16px 0 8px">
-        <p style="margin:8px 0"><strong>¿Sabías que cada 1 de cada 40/50 personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?</strong></p>
+        <p style="margin:8px 0"><strong>¿Sabías que 1 de cada 40/50 personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?</strong></p>
         <p style="margin:8px 0"><strong>Y que, a nivel mundial, aproximadamente 1 de cada 10.000 bebés nace con AME, una condición que cambia para siempre la vida de una familia. </strong></p>
         
         <p style="margin:16px 0 8px">La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las neuronas motoras, esas que hacen posible que podamos hablar, caminar, respirar y tragar. Cuando estas neuronas se dañan, los músculos se debilitan y aparece la atrofia.</p>
@@ -162,7 +162,7 @@ export function createMailService({ mode = "file" } = {}) {
       <div style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;line-height:1.6;color:#111;padding:8px 0">
         <div style="font-size:12px;color:#555">${orgName}</div>
         <h1 style="font-size:28px;margin:8px 0 16px;font-weight:800">
-          GRACIAS por comprar nuestro bono
+          ¡Gracias por comprar nuestro bono!
         </h1>
         <p>Tus números asignados son</p>
         <p style="font-size:28px;font-weight:800">${numbersList}</p>

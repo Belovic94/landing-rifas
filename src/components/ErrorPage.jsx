@@ -20,7 +20,7 @@ export function ErrorPage() {
             </h1>
 
             <p className="mt-3 text-base md:text-lg text-fame-black/80">
-              Lo sentimos, hubo un problema al procesar tu pago. Podés intentar nuevamente o escribirnos y te ayudamos.
+              Lo sentimos, hubo un problema al procesar tu pago. Podés intentar nuevamente o escribirnos y te ayudaremos.
             </p>
 
             <div className="mt-8 rounded-2xl bg-fame-danger/10 p-6 text-left ring-1 ring-fame-danger/20">
@@ -40,7 +40,7 @@ export function ErrorPage() {
                 </div>
 
                 <p className="text-xs text-fame-black/70">
-                  Si podés, contanos qué monto intentaste comprar y el email que usaste.
+                  Si podés, contanos qué monto intentaste pagar y el email que usaste.
                 </p>
               </div>
             </div>
@@ -62,7 +62,7 @@ export function ErrorPage() {
             </div>
 
             <p className="mt-6 text-xs text-fame-black/60">
-              No te preocupes: si el pago no se acreditó, no se te va a cobrar.
+              No te preocupes: si el pago no se acredita, no se realizará ningún cargo.
             </p>
           </div>
         </div>
