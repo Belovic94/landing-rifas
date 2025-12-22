@@ -1,12 +1,7 @@
-// services/cronService.js
-export function createCronService({
-  db,
-  mercadoPagoService,
-  orderService,
-  mailService,
-  // tuning
-  batchSize = 50,
-}) {
+import { logger } from "../utils/logger.js";
+import { v4 as uuidv4 } from "uuid";
+
+export function createCronService({ db, mercadoPagoService, orderService, mailService, batchSize = 50 }) {
   async function withTx(fn) {
     const client = await db.connect();
     try {
@@ -24,50 +19,60 @@ export function createCronService({
 
   return {
     async runOnce() {
+      const runId = uuidv4();
+      const log = logger.child({ runId, job: "expire-orders" });
+      const startedAt = Date.now();
+
       const stats = { processed: 0, extended: 0, paid: 0, released: 0 };
 
-      const orders = await withTx(async (client) => {
-        return await orderService.getExpiredPendingForUpdate(batchSize, client);
-      });
+      log.info({ batchSize }, "[CRON-SERVICE] cron run started");
+
+      let orders = [];
+      try {
+        orders = await withTx((client) => orderService.getExpiredPendingForUpdate(batchSize, client));
+      } catch (e) {
+        log.error({ err: e }, "[CRON-SERVICE] error fetching expired orders");
+        throw e;
+      }
+
+      log.info({ count: orders.length }, "[CRON-SERVICE] orders fetched");
 
       for (const order of orders) {
         stats.processed += 1;
 
-        // 1) MP (afuera de TX)
+        const olog = log.child({ orderId: order.id, paymentId: order.payment_id ?? null });
+        olog.info("[CRON-SERVICE] processing order");
+
+        // MP afuera de TX
         let payment = null;
         try {
-          if (order.payment_id) {
-            payment = await mercadoPagoService.getPaymentById(order.payment_id);
-          } else {
-            payment = await mercadoPagoService.findLatestPaymentByExternalReference(order.id);
-          }
+          payment = order.payment_id
+            ? await mercadoPagoService.getPaymentById(order.payment_id)
+            : await mercadoPagoService.findLatestPaymentByExternalReference(order.id);
         } catch (mpErr) {
-          // Si MP falla, no mates el job: log y seguí con la próxima orden
-          console.error("[CRON] Error consultando MP", {
-            orderId: order.id,
-            message: mpErr?.message,
-            stack: mpErr?.stack,
-          });
+          olog.error({ err: mpErr }, "[CRON-SERVICE] MercadoPago error");
           continue;
         }
 
         const mpStatus = String(payment?.status || "").toLowerCase();
+        olog.info(
+          { mpStatus, mpPaymentId: payment?.id ?? null, amount: payment?.transaction_amount ?? null },
+          "[CRON-SERVICE] MP status resolved"
+        );
 
         if (mpStatus === "approved") {
           const amount = payment.transaction_amount;
           const paymentId = String(payment.id);
 
-          const result = await withTx(async (client) => {
-            return await orderService.handlePaymentApproved(order.id, paymentId, amount, client);
-          });
+          const result = await withTx((client) =>
+            orderService.handlePaymentApproved(order.id, paymentId, amount, client)
+          );
 
-          // si tu servicio devuelve { changed, paidOrder }
           const { changed, paidOrder } = result || {};
-          if (changed === 1) {
-            stats.paid += 1;
-          }
+          if (changed === 1) stats.paid += 1;
 
-          // 3) Mail (afuera de TX)
+          olog.info({ changed, amount, paymentId }, "[CRON-SERVICE] payment approved handled");
+
           if (changed === 1 && paidOrder) {
             try {
               await mailService.sendPurchaseEmail({
@@ -76,17 +81,9 @@ export function createCronService({
                 orderId: order.id,
                 amount,
               });
+              olog.info({ to: paidOrder.email }, "[CRON-SERVICE] purchase email sent");
             } catch (mailErr) {
-              console.error("Error enviando email:", {
-                message: mailErr?.message,
-                code: mailErr?.code,
-                errno: mailErr?.errno,
-                syscall: mailErr?.syscall,
-                host: mailErr?.host,
-                port: mailErr?.port,
-                response: mailErr?.response,
-                stack: mailErr?.stack,
-              });
+              olog.error({ err: mailErr }, "[CRON-SERVICE] email send failed");
             }
           }
           continue;
@@ -95,11 +92,10 @@ export function createCronService({
         if (mpStatus === "pending" || mpStatus === "in_process") {
           const paymentId = payment?.id != null ? String(payment.id) : null;
 
-          await withTx(async (client) => {
-            await orderService.addPendingPayment(order.id, paymentId, client);
-          });
-
+          await withTx((client) => orderService.addPendingPayment(order.id, paymentId, client));
           stats.extended += 1;
+
+          olog.info({ paymentId }, "[CRON-SERVICE] payment pending, order extended");
           continue;
         }
 
@@ -109,22 +105,25 @@ export function createCronService({
             mpStatus === "cancelled" ? "CANCELLED" :
             "ERROR";
 
-          const changed = await withTx(async (client) => {
-            return await orderService.handlePaymentFailedOrExpired(order.id, reason, client);
-          });
+          const changed = await withTx((client) =>
+            orderService.handlePaymentFailedOrExpired(order.id, reason, client)
+          );
 
           if (changed === 1) stats.released += 1;
+
+          olog.warn({ reason, changed }, "[CRON-SERVICE] payment failed, order released");
           continue;
         }
 
-        // status desconocido o sin pago => liberar
-        const changed = await withTx(async (client) => {
-          return await orderService.handlePaymentFailedOrExpired(order.id, "EXPIRED", client);
-        });
+        const changed = await withTx((client) =>
+          orderService.handlePaymentFailedOrExpired(order.id, "EXPIRED", client)
+        );
 
         if (changed === 1) stats.released += 1;
+        olog.warn({ mpStatus, changed }, "[CRON-SERVICE] unknown MP status, order released");
       }
 
+      log.info({ durationMs: Date.now() - startedAt, stats }, "[CRON-SERVICE] cron run finished");
       return stats;
     },
   };
