@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'preact/hooks';
+import { useState, useMemo, useRef } from 'preact/hooks';
 import { TicketIcon } from '@heroicons/react/24/outline';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -23,11 +23,41 @@ function formatARS(n) {
   }).format(n);
 }
 
+function Spinner() {
+  return (
+    <svg
+      className="h-4 w-4 animate-spin"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+        fill="none"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 0 1 8-8v2a6 6 0 0 0-6 6H4z"
+      />
+    </svg>
+  );
+}
+
 export function TicketSection() {
   const defaultAmount = [1, 3, 5, 10, 20];
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState(null);
   const [emailTouched, setEmailTouched] = useState(false);
+
+  // ✅ nuevo
+  const [isLoading, setIsLoading] = useState(false);
+  const abortRef = useRef(null);
+  const [ctaText, setCtaText] = useState("Comprar");
 
   const emailError = useMemo(() => {
     if (!emailTouched) return "";
@@ -47,27 +77,54 @@ export function TicketSection() {
   const API_BASE = import.meta.env.VITE_API_BASE;
 
   const handleClick = async () => {
-    if (!isEmailValid) {
-      setEmailTouched(true);
-      return;
-    }
+    if (isLoading) return;
+    if (!isEmailValid) { setEmailTouched(true); return; }
+    if (!amount) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLoading(true);
+    setCtaText("Creando preferencia…");
+
+    let willRedirect = false;
 
     try {
       const response = await fetch(`${API_BASE}/create-preference`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, email }),
+        signal: controller.signal,
       });
 
       if (!response.ok) throw new Error('Error en el servidor');
 
       const data = await response.json();
-      if (data?.init_point) window.location.href = data.init_point;
-      else console.error('No se recibió init_point en la respuesta');
+
+      if (data?.init_point) {
+        willRedirect = true;
+
+        setCtaText("Redirigiendo a MercadoPago…");
+        window.location.assign(data.init_point);
+        return;
+      }
+
+      console.error('No se recibió init_point en la respuesta');
     } catch (error) {
-      console.error('Error al crear preferencia:', error);
+      if (error?.name !== 'AbortError') {
+        console.error('Error al crear preferencia:', error);
+      }
+    } finally {
+      if (!willRedirect) {  
+        setIsLoading(false);
+        setCtaText("Comprar");
+      }
     }
   };
+
+
+  const isCtaDisabled = isLoading || !amount || !isEmailValid;
 
   return (
     <section className="w-full bg-fame-green/10 px-4 py-10">
@@ -83,7 +140,6 @@ export function TicketSection() {
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {defaultAmount.map((a) => {
             const { price: unit } = getTier(a);
-            const total = unit * a;
 
             return (
               <label key={a} className="block cursor-pointer">
@@ -94,6 +150,7 @@ export function TicketSection() {
                   onChange={() => setAmount(a)}
                   className="peer sr-only"
                   aria-label={`Seleccionar ${a} números`}
+                  disabled={isLoading} 
                 />
 
                 <div
@@ -104,6 +161,7 @@ export function TicketSection() {
                     hover:-translate-y-0.5 hover:border-fame-primary/50 hover:shadow
                     focus-within:ring-2 focus-within:ring-fame-soft/40
                     peer-checked:border-fame-primary peer-checked:bg-fame-green/15 peer-checked:text-fame-black
+                    disabled:opacity-60
                   "
                 >
                   <div className="flex items-center gap-2">
@@ -111,7 +169,6 @@ export function TicketSection() {
                     <TicketIcon className="h-5 w-5 text-fame-primary" />
                   </div>
 
-                  {/* unitario chiquito */}
                   <div className="text-[10px] text-fame-black">
                     {formatARS(unit)} c/u
                   </div>
@@ -156,10 +213,12 @@ export function TicketSection() {
               type="email"
               id="email"
               placeholder="Ingresá tu email..."
+              disabled={isLoading} // ✅ opcional
               className={`
                 w-full rounded-xl border bg-white px-4 py-3 text-fame-black
                 outline-none transition placeholder:text-fame-black/40
                 focus:ring-2 focus:ring-fame-soft/35
+                disabled:opacity-60 disabled:cursor-not-allowed
                 ${emailError
                   ? "border-fame-danger focus:border-fame-danger focus:ring-fame-danger/25"
                   : "border-fame-black/15 focus:border-fame-primary"}
@@ -178,7 +237,7 @@ export function TicketSection() {
         {/* CTA */}
         <button
           onClick={handleClick}
-          disabled={!amount || !isEmailValid}
+          disabled={isCtaDisabled}
           className="
             mt-6 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white
             shadow-sm transition
@@ -188,7 +247,10 @@ export function TicketSection() {
             disabled:cursor-not-allowed disabled:bg-fame-black/30 disabled:text-white/80
           "
         >
-          Comprar
+          <span className="inline-flex items-center justify-center gap-2">
+            {isLoading && <Spinner />}
+            {ctaText}
+          </span>
         </button>
 
         <p className="mt-3 text-center text-xs text-fame-black/60">
