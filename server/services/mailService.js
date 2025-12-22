@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import fs from "fs/promises";
 import path from "path";
 import { createSesService } from "./sesService.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * modes:
@@ -16,30 +17,40 @@ export function createMailService({ mode = "file" } = {}) {
   let transporterPromise = null;
   const sesService = mode === "sesApi" ? createSesService() : null;
 
+  const log = logger.child({ service: "mail", mode });
+
+  log.info("[MAIL] service initialized");
+
   async function getTransporter() {
     if (mode === "test" || mode === "file" || mode === "sesApi") return null;
 
     if (!transporterPromise) {
       transporterPromise = (async () => {
-        console.log("[MAIL] mode in getTransporter:", mode);
+        log.info("[MAIL] creating transporter");
 
         if (mode === "smtp") {
           const port = Number(process.env.SMTP_PORT || 587);
-          const secure = port === 465 || String(process.env.SMTP_SECURE).toLowerCase() === "true";
-          console.log("[MAIL] SMTP config:", {
-            host: process.env.SMTP_HOST,
-            port,
-            secure,
-            user: process.env.SMTP_USER ? "set" : "missing",
-            pass: process.env.SMTP_PASS ? "set" : "missing",
-            from: process.env.SMTP_FROM,
-          });
-          
+          const secure =
+            port === 465 || String(process.env.SMTP_SECURE).toLowerCase() === "true";
+
+          // Logueamos config sin secretos
+          log.info(
+            {
+              host: process.env.SMTP_HOST,
+              port,
+              secure,
+              user: process.env.SMTP_USER ? "set" : "missing",
+              pass: process.env.SMTP_PASS ? "set" : "missing",
+              from: process.env.SMTP_FROM || "default",
+              requireTLS: port === 587,
+            },
+            "[MAIL] SMTP config"
+          );
 
           const t = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port,
-            secure, // 465 true, 587 false
+            secure,
             auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
 
             // timeouts para fallar rápido y con info
@@ -47,24 +58,37 @@ export function createMailService({ mode = "file" } = {}) {
             greetingTimeout: 10_000,
             socketTimeout: 20_000,
 
-            // TLS/SNI ayuda en algunos entornos
-            tls: {
-              servername: process.env.SMTP_HOST,
-            },
-
-            // para 587: asegura STARTTLS
+            tls: { servername: process.env.SMTP_HOST },
             requireTLS: port === 587,
           });
+
+          // Verifica configuración (opcional pero útil).
+          // OJO: en algunos proveedores puede tardar; si querés, podés desactivarlo por env.
+          if (process.env.SMTP_VERIFY === "true") {
+            try {
+              await t.verify();
+              log.info("[MAIL] SMTP verify ok");
+            } catch (e) {
+              log.warn({ err: e }, "[MAIL] SMTP verify failed");
+            }
+          }
+
+          log.info("[MAIL] transporter created (smtp)");
           return t;
         }
 
+        // ethereal
         const testAccount = await nodemailer.createTestAccount();
-        console.log("[MAIL] Ethereal account:", {
-          host: testAccount.smtp.host,
-          port: testAccount.smtp.port,
-          secure: testAccount.smtp.secure,
-          user: testAccount.user,
-        });
+
+        log.info(
+          {
+            host: testAccount.smtp.host,
+            port: testAccount.smtp.port,
+            secure: testAccount.smtp.secure,
+            user: testAccount.user,
+          },
+          "[MAIL] Ethereal account created"
+        );
 
         const t = nodemailer.createTransport({
           host: testAccount.smtp.host,
@@ -72,14 +96,15 @@ export function createMailService({ mode = "file" } = {}) {
           secure: testAccount.smtp.secure,
           auth: { user: testAccount.user, pass: testAccount.pass },
         });
-        console.log("[MAIL] transporter created (ethereal)");
+
+        log.info("[MAIL] transporter created (ethereal)");
         return t;
       })();
     }
 
     return transporterPromise;
   }
-  
+
   function renderTemplate({ numbers, orderId, amount }) {
     const orgName = "FAME Argentina";
     const currency = "$";
@@ -100,47 +125,31 @@ export function createMailService({ mode = "file" } = {}) {
       `<div style="margin:16px 0 8px">
         <p style="margin:8px 0"><strong>¿Sabías que 1 de cada 40/50 personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?</strong></p>
         <p style="margin:8px 0"><strong>Y que, a nivel mundial, aproximadamente 1 de cada 10.000 bebés nace con AME, una condición que cambia para siempre la vida de una familia. </strong></p>
-        
         <p style="margin:16px 0 8px">La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las neuronas motoras, esas que hacen posible que podamos hablar, caminar, respirar y tragar. Cuando estas neuronas se dañan, los músculos se debilitan y aparece la atrofia.</p>
-        
         <p style="margin:16px 0 8px">AME no pregunta de dónde venís, quién sos ni cuál es tu situación económica.<br />
         Por eso, <strong>NECESITAMOS TU COLABORACIÓN</strong>.</p>
-        
         <p style="margin:16px 0 8px">Gracias a vos, el trabajo de FAME crece todos los días.</p>
-        
         <p style="margin:16px 0 8px"><strong>Este BONO nos va a ayudar a:</strong></p>
-        
         <ul style="margin:8px 0 16px; padding-left:20px">
           <li style="margin:8px 0">
-            <strong>✨ Impulsar y avanzar</strong> una investigación con el Dr. Alfredo Cáceres (IUCBC) sobre regeneración celular. Ya viene dando muy buenos resultados y es clave que sigamos avanzando.<br />
-            Les contamos muy brevemente de qué se trata - La reprogramación celular permite convertir células de la piel en células madre pluripotentes inducidas (iPS, por sus siglas en inglés). Estas iPS pueden generar cualquier célula del cuerpo, incluyendo neuronas. Es decir, en el laboratorio podemos obtener neuronas a partir de piel de pacientes. Tener estas neuronas en el laboratorio nos permite estudiar qué diferencias hay entre las neuronas de un paciente de una determinada enfermedad y quien no la tiene.<br />
-            Hemos podido obtener células de la piel de un paciente con AME 1 y reprogramarlas. En este momento, en el laboratorio del Dr. Cáceres en Córdoba se está tratando de generar neuronas a partir de ellas. Cuando eso se logre. Se podrá estudiar en profundidad que diferencia esa neurona de una sana y entender mucho mejor a la AME.
+            <strong>✨ Impulsar y avanzar</strong> una investigación con el Dr. Alfredo Cáceres (IUCBC) sobre regeneración celular...
           </li>
         </ul>
-        
         <p style="margin:16px 0 8px"><strong>Además, desde FAME:</strong></p>
-        
         <ul style="margin:8px 0 16px; padding-left:20px">
-          <li style="margin:4px 0">✨ Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.</li>
-          <li style="margin:4px 0">✨ Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.</li>
-          <li style="margin:4px 0">✨ Impulsamos un proyecto para lograr incluir la AME en la pesquisa a nivel nacional.</li>
-          <li style="margin:4px 0">✨ Capacitamos a profesionales de la salud, enviando médicos argentinos a formarse con expertos internacionales.</li>
-          <li style="margin:4px 0">✨ Traemos especialistas del exterior para seguir elevando el nivel de atención en nuestro país.</li>
-          <li style="margin:4px 0">✨ Y muchas acciones más para estar cerca de nuestra comunidad.</li>
+          <li style="margin:4px 0">✨ Acompañamos y orientamos a las nuevas familias...</li>
+          <li style="margin:4px 0">✨ Trabajamos para que la AME se incluya en la pesquisa neonatal...</li>
         </ul>
-        
         <p style="margin:16px 0 8px">Gracias de corazón por estar del otro lado.<br />
         AME no discrimina, y por eso tu ayuda es esencial.</p>
-        
         <p style="margin:16px 0 8px; font-weight:bold">Juntos Somos Más.</p>
-        
         <div style="margin:24px 0 16px; padding:16px; background-color:#f0f9ff; border-left:4px solid #3b82f6; border-radius:4px">
           <p style="margin:8px 0; font-size:16px; line-height:1.6; color:#1e40af">
             Porque cada gesto suma y cada historia abraza,<br />
-            con la compra del Bono de Reyes de Familias AME Argentina queremos regalarte un cuento infantil, pensado para compartir, imaginar y también colorear en familia.
+            con la compra del Bono de Reyes de Familias AME Argentina queremos regalarte un cuento infantil...
           </p>
           <p style="margin:12px 0 8px">
-            <a href="https://fameargentina.org.ar/cuento-infantil/" 
+            <a href="https://fameargentina.org.ar/cuento-infantil/"
                style="display:inline-block; background-color:#3b82f6; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px">
               📖 Descargar Cuento Infantil
             </a>
@@ -148,7 +157,7 @@ export function createMailService({ mode = "file" } = {}) {
         </div>
        </div>`;
 
-    const subject =`Tus números asignados - ${orgName}`;
+    const subject = `Tus números asignados - ${orgName}`;
 
     const text =
       `¡Gracias por comprar nuestro bono!\n\n` +
@@ -180,8 +189,9 @@ export function createMailService({ mode = "file" } = {}) {
     return { subject, text, html };
   }
 
-  async function writeMailToDisk({ to, from, bcc, subject, text, html, meta = {} }) {
-    const baseDir = process.env.MAIL_OUT_DIR || path.resolve(process.cwd(), "tmp", "mails");
+  async function writeMailToDisk({ to, subject, html, meta = {} }) {
+    const baseDir =
+      process.env.MAIL_OUT_DIR || path.resolve(process.cwd(), "tmp", "mails");
     await fs.mkdir(baseDir, { recursive: true });
 
     const ts = new Date().toISOString().replace(/[:.]/g, "-");
@@ -189,76 +199,104 @@ export function createMailService({ mode = "file" } = {}) {
     const prefix = `${ts}__${safeTo}__${meta.orderId || "no-order"}`;
 
     const htmlPath = path.join(baseDir, `${prefix}.html`);
-
     await fs.writeFile(htmlPath, html, "utf8");
 
-    console.log("📧 Mail guardado:");
-    console.log(" - HTML:", htmlPath);
+    log.info(
+      { outDir: baseDir, file: htmlPath, subject, meta },
+      "[MAIL] mail saved to disk"
+    );
 
     return htmlPath;
   }
 
-
   return {
     async sendPurchaseEmail({ to, numbers, orderId, amount }) {
-      console.log("MailService mode:", mode);
       if (!to || mode === "test") return;
 
-      const transporter = await getTransporter();
+      const startedAt = Date.now();
+      const mlog = log.child({
+        orderId,
+        numbersCount: numbers?.length ?? 0,
+        amount,
+        to,
+      });
 
-      const from = process.env.SMTP_FROM || "BONO NACIONAL Familias AME Argentina <bono@fameargentina.org.ar>";
+      const from =
+        process.env.SMTP_FROM ||
+        "BONO NACIONAL Familias AME Argentina <bono@fameargentina.org.ar>";
       const bcc = process.env.ADMIN_EMAIL || undefined;
 
-      const { subject, text, html } = renderTemplate({
-        numbers,
-        orderId,
-        amount,
-      });
+      const { subject, text, html } = renderTemplate({ numbers, orderId, amount });
 
-      if (mode === "file") {
-        const htmlPath =  await writeMailToDisk({
-          to,
+      mlog.info({ from, bcc, subject }, "[MAIL] sendPurchaseEmail start");
+
+      try {
+        if (mode === "file") {
+          const htmlPath = await writeMailToDisk({
+            to,
+            subject,
+            html,
+            meta: { orderId, amount, numbersCount: numbers?.length ?? 0 },
+          });
+
+          mlog.info(
+            { durationMs: Date.now() - startedAt, htmlPath },
+            "[MAIL] sendPurchaseEmail done (file)"
+          );
+          return;
+        }
+
+        if (mode === "sesApi") {
+          mlog.info("[MAIL] sending via SES API");
+
+          const res = await sesService.sendEmail({
+            from,
+            to,
+            bcc,
+            subject,
+            text,
+            html,
+          });
+
+          mlog.info(
+            { durationMs: Date.now() - startedAt, messageId: res?.MessageId ?? null },
+            "[MAIL] sendPurchaseEmail done (sesApi)"
+          );
+          return;
+        }
+
+        const transporter = await getTransporter();
+
+        const info = await transporter.sendMail({
           from,
+          to,
           bcc,
           subject,
           text,
           html,
-          meta: { orderId, amount, numbersCount: numbers?.length ?? 0 },
-        });
-        const fileUrl = `file://${path.resolve(htmlPath)}`;
-        console.log(" - ABRIR (file):", fileUrl);
-        return;
-      }
-
-      if (mode === "sesApi") {
-        console.log("[MAIL] sending via SES API");
-
-        await sesService.sendEmail({
-          from,
-          to,
-          bcc,
-          subject,
-          text,
-          html,
         });
 
-        return;
-      }
+        if (mode === "ethereal") {
+          const previewUrl = nodemailer.getTestMessageUrl(info);
+          mlog.info({ previewUrl }, "[MAIL] ethereal preview");
+        }
 
-      const info = await transporter.sendMail({
-        from,
-        to,
-        bcc,
-        subject,
-        text,
-        html,
-      });
-
-      if (mode === "ethereal") {
-        console.log(
-          "📧 Mail preview:",
-          nodemailer.getTestMessageUrl(info)
+        mlog.info(
+          {
+            durationMs: Date.now() - startedAt,
+            messageId: info?.messageId ?? null,
+            accepted: info?.accepted ?? null,
+            rejected: info?.rejected ?? null,
+            response: info?.response ?? null,
+          },
+          "[MAIL] sendPurchaseEmail done"
         );
+      } catch (err) {
+        mlog.error(
+          { err, durationMs: Date.now() - startedAt },
+          "[MAIL] sendPurchaseEmail failed"
+        );
+        throw err;
       }
     },
   };

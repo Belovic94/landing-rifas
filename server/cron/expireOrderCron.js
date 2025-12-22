@@ -1,42 +1,103 @@
 // cron/expireOrdersCron.js
+import { v4 as uuidv4 } from "uuid";
+import { logger } from "../utils/logger.js";
+
 export function createExpireOrdersCron({
   cronService,
   intervalMin,
-  logger = console,
 }) {
+  const log = logger.child({ job: "expire-orders-cron" });
+
+  const intervalMs = Math.max(1, Number(intervalMin || 1)) * 60_000;
+
   let timer = null;
   let running = false;
-  const intervalMs = intervalMin * 1000 * 60;
+  let stopped = true;
 
   async function tick() {
-    if (running) return; // evita solaparse si tarda más que interval
+    if (stopped) return;
+
+    if (running) {
+      log.debug("[CRON] cron tick skipped (already running)");
+      scheduleNext();
+      return;
+    }
+
     running = true;
 
+    const runId = uuidv4();
+    const tlog = log.child({ runId });
+    const startedAt = Date.now();
+
     try {
+      tlog.info({ intervalMs }, "[CRON] cron tick start");
+
       const result = await cronService.runOnce();
+
       if (result?.processed != null) {
-        logger.log(`🕒 cron: processed=${result.processed} extended=${result.extended} paid=${result.paid} released=${result.released}`);
+        tlog.info(
+          {
+            durationMs: Date.now() - startedAt,
+            stats: {
+              processed: result.processed,
+              extended: result.extended,
+              paid: result.paid,
+              released: result.released,
+            },
+          },
+          "[CRON] cron tick done"
+        );
+      } else {
+        tlog.info(
+          { durationMs: Date.now() - startedAt },
+          "[CRON] cron tick done (no stats)"
+        );
       }
-    } catch (e) {
-      logger.error("🧯 cron: error", e);
+    } catch (err) {
+      tlog.error(
+        { err, durationMs: Date.now() - startedAt },
+        "[CRON] cron tick failed"
+      );
     } finally {
       running = false;
+      scheduleNext();
     }
   }
 
-  return {
-    start() {
-      if (timer) return;
-      timer = setInterval(tick, intervalMs);
-      // opcional: correr 1 vez al iniciar
+  function scheduleNext() {
+    if (stopped) return;
+    if (timer) clearTimeout(timer);
+
+    timer = setTimeout(() => {
       tick().catch(() => {});
-      logger.log(`⏱️ cron: started every ${intervalMs}ms`);
+    }, intervalMs);
+  }
+
+  return {
+    start({ runImmediately = true } = {}) {
+      if (!stopped) return;
+
+      stopped = false;
+
+      log.info(
+        { intervalMs, runImmediately },
+        "[CRON] cron started"
+      );
+
+      if (runImmediately) {
+        tick().catch(() => {});
+      } else {
+        scheduleNext();
+      }
     },
+
     stop() {
-      if (!timer) return;
-      clearInterval(timer);
+      stopped = true;
+
+      if (timer) clearTimeout(timer);
       timer = null;
-      logger.log("🛑 cron: stopped");
-    },
+
+      log.info({ running }, "[CRON] cron stopped");
+    }
   };
 }

@@ -1,4 +1,7 @@
+// db/db.js
 import pkg from "pg";
+import { logger } from "./utils/logger.js";
+
 const { Pool } = pkg;
 
 let pool;
@@ -7,23 +10,39 @@ export function getDb() {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === "prod" ? { rejectUnauthorized: false } : false,
+      ssl:
+        process.env.NODE_ENV === "prod"
+          ? { rejectUnauthorized: false }
+          : false,
     });
+
+    logger.info(
+      {
+        ssl: !!pool.options.ssl,
+      },
+      "[DB] pool initialized"
+    );
   }
+
   return pool;
 }
 
 export async function initDatabase(db, reset = false) {
+  const log = logger.child({ module: "db", action: "init" });
+  const startedAt = Date.now();
+
   const client = await db.connect();
 
   try {
-    console.log("🛠️ initDatabase: start", reset ? "(RESET ENABLED)" : "");
+    log.info({ reset }, "[DB] initDatabase start");
+
     await client.query("BEGIN");
 
     await client.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
 
     if (reset) {
-      console.log("🧨 Reset: borrando tablas...");
+      log.warn("RESET ENABLED: dropping tables");
+
       await client.query(`DROP TABLE IF EXISTS order_tickets CASCADE;`);
       await client.query(`DROP TABLE IF EXISTS tickets CASCADE;`);
       await client.query(`DROP TABLE IF EXISTS orders CASCADE;`);
@@ -62,12 +81,11 @@ export async function initDatabase(db, reset = false) {
       );
     `);
 
-    // Índices
+    // índices
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_expires_at ON orders(expires_at);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_order_tickets_order_id ON order_tickets(order_id);`);
 
-    // Exclusividad: un ticket activo en una sola orden
     await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS ux_ticket_active_reservation
       ON order_tickets(ticket_number)
@@ -75,11 +93,14 @@ export async function initDatabase(db, reset = false) {
     `);
 
     // Seed tickets
-    const { rows } = await client.query(`SELECT COUNT(*)::int AS count FROM tickets`);
+    const { rows } = await client.query(
+      `SELECT COUNT(*)::int AS count FROM tickets`
+    );
 
     if (rows[0].count === 0) {
       const TOTAL = 10000;
-      console.log("🎟️ Seedeando tickets...");
+
+      log.info({ total: TOTAL }, "[DB] seeding tickets");
 
       await client.query(
         `INSERT INTO tickets (number)
@@ -87,16 +108,28 @@ export async function initDatabase(db, reset = false) {
         [TOTAL]
       );
 
-      console.log(`✅ Tickets generados: ${TOTAL}`);
+      log.info({ total: TOTAL }, "[DB] tickets seeded");
     } else {
-      console.log(`ℹ️ Tickets ya existen (${rows[0].count}), no se seedea`);
+      log.info(
+        { existing: rows[0].count },
+        "[DB] tickets already exist, skipping seed"
+      );
     }
 
     await client.query("COMMIT");
-    console.log("✅ initDatabase: OK");
+
+    log.info(
+      { durationMs: Date.now() - startedAt },
+      "[DB] initDatabase completed"
+    );
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("❌ initDatabase: ERROR", err);
+
+    log.error(
+      { err, durationMs: Date.now() - startedAt },
+      "[DB] initDatabase failed"
+    );
+
     throw err;
   } finally {
     client.release();
