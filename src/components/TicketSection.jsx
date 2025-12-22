@@ -44,7 +44,7 @@ export function TicketSection() {
     return { unit, total: unit * amount };
   }, [amount]);
 
-  const BASE_URL = "https://api.bono2026.fameargentina.org.ar";
+  const API_BASE = import.meta.env.VITE_API_BASE;
 
   const handleClick = async () => {
     if (!isEmailValid) {
@@ -53,7 +53,7 @@ export function TicketSection() {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/create-preference`, {
+      const response = await fetch(`${API_BASE}/create-preference`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, email }),
