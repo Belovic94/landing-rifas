@@ -1,6 +1,71 @@
 import { v4 as uuidv4 } from "uuid";
 
 export function createOrderService(db, orderRepo, reservationRepo) {
+
+  async function handlePaymentApprovedCore(orderId, paymentId, amount, client) {
+    const changed = await orderRepo.markPaid(orderId, paymentId, amount, client);
+
+    const order = changed === 1
+      ? await orderRepo.getOrder(orderId, client)
+      : null;
+
+    return { changed, order };
+  }
+
+  async function handlePaymentApprovedWrapper(orderId, paymentId, amount) {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+
+      // idempotente: solo cambia si estaba PENDING
+      const changed = await orderRepo.markPaid(orderId, paymentId, amount, client);
+
+      const order = changed === 1
+        ? await orderRepo.getOrder(orderId, client)
+        : null;
+
+      await client.query("COMMIT");
+
+      return { changed, order };
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async function handlePaymentFailedOrExpiredCore(orderId, reason, client) {
+    const changed = await orderRepo.markStatusIfPending(orderId, reason, client);
+    if (changed === 1) {
+      await reservationRepo.releaseOrderTickets(orderId, reason, client);
+    }
+
+    return changed;
+  }
+
+  async function handlePaymentFailedOrExpiredWrapper(orderId, reason) {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Solo si estaba PENDING
+      const changed = await orderRepo.markStatusIfPending(orderId, reason, client);
+
+      if (changed === 1) {
+        await reservationRepo.releaseOrderTickets(orderId, reason, client);
+      }
+
+      await client.query("COMMIT");
+      return changed;
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
   return {
     async createPreferenceFlow(ticketsAmount, email, expiresAt) {
       const orderId = uuidv4();
@@ -48,49 +113,23 @@ export function createOrderService(db, orderRepo, reservationRepo) {
       }
     },
 
-    async handlePaymentApproved(orderId, paymentId, amount) {
-      const client = await db.connect();
-      try {
-        await client.query("BEGIN");
-
-        // idempotente: solo cambia si estaba PENDING
-        const changed = await orderRepo.markPaid(orderId, paymentId, amount, client);
-
-        const order = changed === 1
-          ? await orderRepo.getOrder(orderId, client)
-          : null;
-
-        await client.query("COMMIT");
-
-        return { changed, order };
-      } catch (e) {
-        await client.query("ROLLBACK");
-        throw e;
-      } finally {
-        client.release();
+    async handlePaymentApproved(orderId, paymentId, amount, client) {
+      if (client) {
+        // ya estamos en una TX
+        return handlePaymentApprovedCore(orderId, paymentId, amount, client);
       }
+
+      // no hay TX → uso wrapper
+      return handlePaymentApprovedWrapper(orderId, paymentId, amount);
     },
 
-    async handlePaymentFailedOrExpired(orderId, reason) {
-      const client = await db.connect();
-      try {
-        await client.query("BEGIN");
-
-        // Solo si estaba PENDING
-        const changed = await orderRepo.markStatusIfPending(orderId, reason, client);
-
-        if (changed === 1) {
-          await reservationRepo.releaseOrderTickets(orderId, reason, client);
-        }
-
-        await client.query("COMMIT");
-        return changed;
-      } catch (e) {
-        await client.query("ROLLBACK");
-        throw e;
-      } finally {
-        client.release();
+    async handlePaymentFailedOrExpired(orderId, reason, client) {
+      if (client) {
+        // ya estamos en una TX
+        return handlePaymentFailedOrExpiredCore(orderId, reason, client);
       }
+      // no hay TX → uso wrapper
+      return handlePaymentFailedOrExpiredWrapper(orderId, reason);
     },
 
     async addPendingPayment(orderId, paymentId, client) {

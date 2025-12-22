@@ -7,6 +7,7 @@
     "worker": "node server/worker.js",
     "dev": "NODE_ENV=development concurrently \"vite\" \"node server/index.js\"",
     "dev_reset": "NODE_ENV=development RESET_DB=true concurrently \"vite\" \"node server/index.js\"",
+    "dev_worker": "NODE_ENV=development node server/worker.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "client-dev": "vite",
     "build": "vite build"
