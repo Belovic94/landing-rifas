@@ -3,6 +3,7 @@ import cors from "cors";
 import { createExpirationDate, getTicketPrice } from "./utils.js";
 import { logger } from "./utils/logger.js"
 import { requireAuth, requireRole } from "./middlewares/auth.js";
+import * as XLSX from "xlsx";
 
 const ALLOWED_ORIGINS = [
   "https://bono2026.fameargentina.org.ar",
@@ -122,7 +123,6 @@ export function createApp({ orderService, mercadoPagoService, mailService, authS
 
         return res.status(200).json({ init_point: mpPref.init_point });
       } catch (mpErr) {
-        // si MP falla: liberar reserva + cancelar order
         try {
           await orderService.onPreferenceCreateFailed(orderId);
           req.log.warn({ orderId }, "[PREFERENCE] rollback when creating preference");
@@ -249,19 +249,81 @@ export function createApp({ orderService, mercadoPagoService, mailService, authS
   });
 
   app.get("/admin/stats", requireAuth, requireRole("admin", "viewer"), async (req, res) => {
-   try{
-    const stats = await orderService.getStats();
-    req.log.info({ total: orders.length }, "[ADMIN] STATS_OK");
-    return res.status(200).json({ stats });
-   } catch (err) {
-    req.log.error({ err }, "[ADMIN] STATS_ERROR");
-    return res.status(500).json({
-      ok: false,
-      error: "INTERNAL_ERROR",
-    });
-  }
-    
+    try{
+      const stats = await orderService.getStats();
+      req.log.info({ total: orders.length }, "[ADMIN] STATS_OK");
+      return res.status(200).json({ stats });
+    } catch (err) {
+      req.log.error({ err }, "[ADMIN] STATS_ERROR");
+      return res.status(500).json({
+        ok: false,
+        error: "INTERNAL_ERROR",
+      });
+    } 
   });
+
+  app.get("/admin/orders/export", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const orders = await orderService.getOrders();
+
+      const formatDateAR = (v) => {
+        if (!v) return "";
+        const d = v instanceof Date ? v : new Date(v);
+        return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("es-AR");
+      };
+
+      const ticketsToString = (tickets) => {
+        if (!Array.isArray(tickets) || tickets.length === 0) return "";
+        return tickets
+          .map((t) => t?.number)
+          .filter(Boolean)
+          .join(", ");
+      };
+
+      const rows = orders.map((o) => ({
+        "Order ID": o.id ?? "",
+        "Email": o.email ?? "",
+        "Estado": o.status ?? "",
+        "Monto": o.amount != null ? Number(o.amount) : "",
+        "Payment ID": o.paymentId ?? "",
+        "Creada": formatDateAR(o.createdAt),
+        "Expira": formatDateAR(o.expiresAt),
+
+        // opciones de tickets:
+        "Tickets": ticketsToString(o.tickets),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+
+      // (opcional) anchos lindos
+      worksheet["!cols"] = [
+        { wch: 36 }, // Order ID
+        { wch: 28 }, // Email
+        { wch: 12 }, // Estado
+        { wch: 10 }, // Monto
+        { wch: 28 }, // Payment ID
+        { wch: 20 }, // Creada
+        { wch: 20 }, // Expira
+        { wch: 45 }, // Tickets
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Órdenes");
+
+      const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+      res.setHeader("Content-Disposition", "attachment; filename=ordenes.xlsx");
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.send(buffer);
+    } catch (err) {
+      req.log.error({ err }, "[EXPORT_ORDERS]");
+      res.status(500).json({ error: "No se pudo exportar el Excel" });
+    }
+  });
+
 
   app.post("/auth/login", async (req, res) => {
     const { username, password } = req.body || {};
