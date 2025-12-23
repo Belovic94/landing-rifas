@@ -30,7 +30,7 @@ export function App() {
     return <ErrorPage />;
   }
 
-  if (path === '/panel' || path === 'panel.html') {
+  if (path === '/panel' || path === '/panel.html') {
     return <PanelPage />;
   }
 

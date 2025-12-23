@@ -310,28 +310,25 @@ export function PanelPage() {
   const [items, setItems] = useState([]);
   const [openId, setOpenId] = useState(null);
 
-  // 1) Resolver session + redirect si no hay
   useEffect(() => {
     const s = getSession();
     if (!s) {
-      const next = encodeURIComponent(window.location.pathname || "/panel.html");
-      window.location.replace(`/login.html?next=${next}`);
+      const next = encodeURIComponent(window.location.pathname || "/panel");
+      window.location.replace(`/login?next=${next}`);
       return;
     }
     setSession(s);
   }, []);
 
-  // Mientras decide/redirect, no renderizamos nada
   if (!session) return null;
 
   const canSeeOrders = session.user?.role === "admin";
 
-  // 2) Load data (solo si es admin, porque /admin/orders va a estar bloqueado)
   async function load() {
     setLoading(true);
 
     if (!canSeeOrders) {
-      setItems([]); // el viewer no ve órdenes
+      setItems([]);
       setLoading(false);
       return;
     }
@@ -343,11 +340,10 @@ export function PanelPage() {
         },
       });
 
-      // si el token expiró del lado servidor o cambió secret → limpieza + redirect
       if (ordersResponse.status === 401) {
         clearSession();
-        const next = encodeURIComponent(window.location.pathname || "/panel.html");
-        window.location.replace(`/login.html?next=${next}`);
+        const next = encodeURIComponent(window.location.pathname || "/panel");
+        window.location.replace(`/login?next=${next}`);
         return;
       }
 
@@ -357,7 +353,6 @@ export function PanelPage() {
       const orders = data.items ?? data.orders ?? [];
       setItems(orders.map(normalizeOrder));
     } catch {
-      // si querés, acá seteamos un error visual
     } finally {
       setLoading(false);
     }
