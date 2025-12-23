@@ -13,8 +13,8 @@ function hostPagesPlugin() {
         { from: 'dist/pages/success.html', to: 'dist/success/index.html' },
         { from: 'dist/pages/pending.html', to: 'dist/pending/index.html' },
         { from: 'dist/pages/error.html', to: 'dist/error/index.html' },
-        { from: 'dist/pages/login.html', to: 'dist/pending/login.html' },
-        { from: 'dist/pages/panel.html', to: 'dist/error/panel.html' },
+        { from: 'dist/pages/login.html', to: 'dist/login/index.html' },
+        { from: 'dist/pages/panel.html', to: 'dist/panel/index.html' },
       ];
 
       for (const m of moves) {
