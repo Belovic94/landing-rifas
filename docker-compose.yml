@@ -1,6 +1,6 @@
 services:
   db-rifas:
-    image: postgres:15
+    image: postgres:17
     container_name: rifas-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
