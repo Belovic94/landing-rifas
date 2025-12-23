@@ -98,7 +98,6 @@ export function AboutSection() {
               {[
                 "Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.",
                 "Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.",
-                "Impulsamos un proyecto para lograr incluir la AME en la pesquisa a nivel nacional.",
                 "Capacitamos a profesionales de la salud, enviando médicos argentinos a formarse con expertos internacionales.",
                 "Traemos especialistas del exterior para seguir elevando el nivel de atención en nuestro país.",
                 "Y muchas acciones más para estar cerca de nuestra comunidad.",
