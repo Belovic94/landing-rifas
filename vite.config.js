@@ -13,6 +13,8 @@ function hostPagesPlugin() {
         { from: 'dist/pages/success.html', to: 'dist/success/index.html' },
         { from: 'dist/pages/pending.html', to: 'dist/pending/index.html' },
         { from: 'dist/pages/error.html', to: 'dist/error/index.html' },
+        { from: 'dist/pages/login.html', to: 'dist/pending/login.html' },
+        { from: 'dist/pages/panel.html', to: 'dist/error/panel.html' },
       ];
 
       for (const m of moves) {
@@ -45,6 +47,8 @@ export default defineConfig({
         success: 'pages/success.html',
         pending: 'pages/pending.html',
         error: 'pages/error.html',
+        login: 'pages/login.html',
+        panel: 'pages/panel.html'
       },
     },
   },
