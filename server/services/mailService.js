@@ -125,31 +125,47 @@ export function createMailService({ mode = "file" } = {}) {
       `<div style="margin:16px 0 8px">
         <p style="margin:8px 0"><strong>¿Sabías que 1 de cada 40/50 personas en el mundo es portadora del gen que causa Atrofia Muscular Espinal (AME)?</strong></p>
         <p style="margin:8px 0"><strong>Y que, a nivel mundial, aproximadamente 1 de cada 10.000 bebés nace con AME, una condición que cambia para siempre la vida de una familia. </strong></p>
+        
         <p style="margin:16px 0 8px">La Atrofia Muscular Espinal (AME) es una enfermedad genética, degenerativa y hereditaria que afecta a las neuronas motoras, esas que hacen posible que podamos hablar, caminar, respirar y tragar. Cuando estas neuronas se dañan, los músculos se debilitan y aparece la atrofia.</p>
+        
         <p style="margin:16px 0 8px">AME no pregunta de dónde venís, quién sos ni cuál es tu situación económica.<br />
         Por eso, <strong>NECESITAMOS TU COLABORACIÓN</strong>.</p>
+        
         <p style="margin:16px 0 8px">Gracias a vos, el trabajo de FAME crece todos los días.</p>
+        
         <p style="margin:16px 0 8px"><strong>Este BONO nos va a ayudar a:</strong></p>
+        
         <ul style="margin:8px 0 16px; padding-left:20px">
           <li style="margin:8px 0">
-            <strong>✨ Impulsar y avanzar</strong> una investigación con el Dr. Alfredo Cáceres (IUCBC) sobre regeneración celular...
+            <strong>✨ Impulsar y avanzar</strong> una investigación con el Dr. Alfredo Cáceres (IUCBC) sobre regeneración celular. Ya viene dando muy buenos resultados y es clave que sigamos avanzando.<br />
+            Les contamos muy brevemente de qué se trata - La reprogramación celular permite convertir células de la piel en células madre pluripotentes inducidas (iPS, por sus siglas en inglés). Estas iPS pueden generar cualquier célula del cuerpo, incluyendo neuronas. Es decir, en el laboratorio podemos obtener neuronas a partir de piel de pacientes. Tener estas neuronas en el laboratorio nos permite estudiar qué diferencias hay entre las neuronas de un paciente de una determinada enfermedad y quien no la tiene.<br />
+            Hemos podido obtener células de la piel de un paciente con AME 1 y reprogramarlas. En este momento, en el laboratorio del Dr. Cáceres en Córdoba se está tratando de generar neuronas a partir de ellas. Cuando eso se logre. Se podrá estudiar en profundidad que diferencia esa neurona de una sana y entender mucho mejor a la AME.
           </li>
         </ul>
+        
         <p style="margin:16px 0 8px"><strong>Además, desde FAME:</strong></p>
+        
         <ul style="margin:8px 0 16px; padding-left:20px">
-          <li style="margin:4px 0">✨ Acompañamos y orientamos a las nuevas familias...</li>
-          <li style="margin:4px 0">✨ Trabajamos para que la AME se incluya en la pesquisa neonatal...</li>
+          <li style="margin:4px 0">✨ Acompañamos y orientamos a las nuevas familias, para que el camino del diagnóstico sea más claro y humano y para que todas las personas con AME accedan a su tratamiento.</li>
+          <li style="margin:4px 0">✨ Trabajamos para que la AME se incluya en la pesquisa neonatal a nivel nacional, porque un diagnóstico temprano puede cambiar drásticamente el pronóstico de vida.</li>
+          <li style="margin:4px 0">✨ Impulsamos un proyecto para lograr incluir la AME en la pesquisa a nivel nacional.</li>
+          <li style="margin:4px 0">✨ Capacitamos a profesionales de la salud, enviando médicos argentinos a formarse con expertos internacionales.</li>
+          <li style="margin:4px 0">✨ Traemos especialistas del exterior para seguir elevando el nivel de atención en nuestro país.</li>
+          <li style="margin:4px 0">✨ Y muchas acciones más para estar cerca de nuestra comunidad.</li>
         </ul>
+        
         <p style="margin:16px 0 8px">Gracias de corazón por estar del otro lado.<br />
         AME no discrimina, y por eso tu ayuda es esencial.</p>
+        
         <p style="margin:16px 0 8px; font-weight:bold">Juntos Somos Más.</p>
+        
         <div style="margin:24px 0 16px; padding:16px; background-color:#f0f9ff; border-left:4px solid #3b82f6; border-radius:4px">
           <p style="margin:8px 0; font-size:16px; line-height:1.6; color:#1e40af">
             Porque cada gesto suma y cada historia abraza,<br />
-            con la compra del Bono de Reyes de Familias AME Argentina queremos regalarte un cuento infantil...
+            con la compra del Bono de Reyes de Familias AME Argentina queremos regalarte un cuento infantil, pensado para compartir, imaginar y también colorear en familia.
           </p>
           <p style="margin:12px 0 8px">
-            <a href="https://fameargentina.org.ar/cuento-infantil/"
+            <a href="https://fameargentina.org.ar/cuento-infantil/" 
                style="display:inline-block; background-color:#3b82f6; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px">
               📖 Descargar Cuento Infantil
             </a>
@@ -157,7 +173,7 @@ export function createMailService({ mode = "file" } = {}) {
         </div>
        </div>`;
 
-    const subject = `Tus números asignados - ${orgName}`;
+    const subject =`Tus números asignados - ${orgName}`;
 
     const text =
       `¡Gracias por comprar nuestro bono!\n\n` +
