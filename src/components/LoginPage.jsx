@@ -17,7 +17,7 @@ function cls(...xs) {
 export function LoginPage() {
   const next = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("next") || "/panel.html";
+    return params.get("next") || "/panel";
   }, []);
 
   const [username, setUsername] = useState("");

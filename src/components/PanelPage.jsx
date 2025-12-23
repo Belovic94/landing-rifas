@@ -310,12 +310,11 @@ export function PanelPage() {
   const [items, setItems] = useState([]);
   const [openId, setOpenId] = useState(null);
 
-  // 1) Resolver session + redirect si no hay
   useEffect(() => {
     const s = getSession();
     if (!s) {
-      const next = encodeURIComponent(window.location.pathname || "/panel.html");
-      window.location.replace(`/login.html?next=${next}`);
+      const next = encodeURIComponent(window.location.pathname || "/panel");
+      window.location.replace(`/login?next=${next}`);
       return;
     }
     setSession(s);
@@ -346,8 +345,8 @@ export function PanelPage() {
       // si el token expiró del lado servidor o cambió secret → limpieza + redirect
       if (ordersResponse.status === 401) {
         clearSession();
-        const next = encodeURIComponent(window.location.pathname || "/panel.html");
-        window.location.replace(`/login.html?next=${next}`);
+        const next = encodeURIComponent(window.location.pathname || "/panel");
+        window.location.replace(`/login?next=${next}`);
         return;
       }
 
