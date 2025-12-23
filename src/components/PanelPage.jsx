@@ -320,17 +320,15 @@ export function PanelPage() {
     setSession(s);
   }, []);
 
-  // Mientras decide/redirect, no renderizamos nada
   if (!session) return null;
 
   const canSeeOrders = session.user?.role === "admin";
 
-  // 2) Load data (solo si es admin, porque /admin/orders va a estar bloqueado)
   async function load() {
     setLoading(true);
 
     if (!canSeeOrders) {
-      setItems([]); // el viewer no ve órdenes
+      setItems([]);
       setLoading(false);
       return;
     }
@@ -342,7 +340,6 @@ export function PanelPage() {
         },
       });
 
-      // si el token expiró del lado servidor o cambió secret → limpieza + redirect
       if (ordersResponse.status === 401) {
         clearSession();
         const next = encodeURIComponent(window.location.pathname || "/panel");
@@ -356,7 +353,6 @@ export function PanelPage() {
       const orders = data.items ?? data.orders ?? [];
       setItems(orders.map(normalizeOrder));
     } catch {
-      // si querés, acá seteamos un error visual
     } finally {
       setLoading(false);
     }
