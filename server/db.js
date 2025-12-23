@@ -1,5 +1,6 @@
 // db/db.js
 import pkg from "pg";
+import bcrypt from "bcryptjs";
 import { logger } from "./utils/logger.js";
 
 const { Pool } = pkg;
@@ -46,7 +47,20 @@ export async function initDatabase(db, reset = false) {
       await client.query(`DROP TABLE IF EXISTS order_tickets CASCADE;`);
       await client.query(`DROP TABLE IF EXISTS tickets CASCADE;`);
       await client.query(`DROP TABLE IF EXISTS orders CASCADE;`);
+      await client.query(`DROP TABLE IF EXISTS users CASCADE;`);
     }
+
+    // users (panel admin)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('admin', 'viewer')),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
 
     // tickets catálogo
     await client.query(`
@@ -113,6 +127,45 @@ export async function initDatabase(db, reset = false) {
       log.info(
         { existing: rows[0].count },
         "[DB] tickets already exist, skipping seed"
+      );
+    }
+
+    // Seed users (admin + analytics) — idempotente
+    const { rows: userRows } = await client.query(
+      `SELECT COUNT(*)::int AS count FROM users`
+    );
+
+    if (userRows[0].count === 0) {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      const analyticsPassword = process.env.ANALYTICS_PASSWORD;
+
+      log.info("[DB] seeding users (admin + analytics)");
+
+      const adminHash = await bcrypt.hash(adminPassword, 10);
+      const analyticsHash = await bcrypt.hash(analyticsPassword, 10);
+
+      await client.query(
+        `
+        INSERT INTO users (username, name, password_hash, role)
+        VALUES
+          ($1, $2, $3, $4),
+          ($5, $6, $7, $8)
+        ON CONFLICT (username) DO NOTHING
+        `,
+        [
+          "admin", "Administrador", adminHash, "admin",
+          "analytics", "Estadísticas", analyticsHash, "viewer",
+        ]
+      );
+
+      log.warn(
+        { adminUsername: "admin", analyticsUsername: "analytics" },
+        "[DB] users seeded (set ADMIN_PASSWORD / ANALYTICS_PASSWORD in env)"
+      );
+    } else {
+      log.info(
+        { existing: userRows[0].count },
+        "[DB] users already exist, skipping seed"
       );
     }
 

@@ -16,16 +16,19 @@
     "@aws-sdk/client-ses": "^3.954.0",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/vite": "^4.1.11",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
     "mercadopago": "^2.11.0",
     "nodemailer": "^6.9.14",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
     "preact": "^10.26.9",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "wouter": "^3.9.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.2",

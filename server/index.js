@@ -9,6 +9,8 @@ import { createOrderService } from "./services/orderService.js";
 import { createMercadoPagoService } from "./services/mercadopagoService.js";
 import { createApp } from "./app.js";
 import { createMailService } from "./services/mailService.js";
+import { createUserRepository } from "./repositories/userRepository.js";
+import { createAuthService } from "./services/authService.js";
 
 const bootId = uuidv4();
 const bootStartedAt = Date.now();
@@ -35,6 +37,8 @@ const db = getDb();
 const reservationRepository = createReservationRepository(db);
 const orderRepository = createOrderRepository(db);
 const orderService = createOrderService(db, orderRepository, reservationRepository);
+const userRepository = createUserRepository(db);
+const authService = createAuthService({ userRepository });
 
 // MercadoPago (sin loguear accessToken)
 const mercadoPagoService = createMercadoPagoService({
@@ -71,7 +75,7 @@ try {
   process.exit(1);
 }
 
-const app = createApp({ orderService, mercadoPagoService, mailService });
+const app = createApp({ orderService, mercadoPagoService, mailService, authService });
 
 // Error handler (final)
 app.use((err, req, res, next) => {
@@ -100,10 +104,8 @@ async function shutdown(signal) {
     "[APP] shutdown start"
   );
 
-  // Dejar de aceptar conexiones nuevas
   await new Promise((resolve) => {
     server.close(() => resolve());
-    // safety: por si no hay conexiones, close llama igual
     setTimeout(resolve, 5_000);
   });
 

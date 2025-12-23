@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { createExpirationDate, getTicketPrice } from "./utils.js";
 import { logger } from "./utils/logger.js"
+import { requireAuth, requireRole } from "./middlewares/auth.js";
 
 const ALLOWED_ORIGINS = [
   "https://bono2026.fameargentina.org.ar",
@@ -53,7 +54,7 @@ function requestLogger() {
   };
 }
 
-export function createApp({ orderService, mercadoPagoService, mailService }) {
+export function createApp({ orderService, mercadoPagoService, mailService, authService }) {
   const app = express();
 
   app.use(corsMiddleware());
@@ -229,7 +230,7 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
     res.send("ok");
   });
 
-  app.get("/admin/orders", async (req, res) => {
+  app.get("/admin/orders", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const orders = await orderService.getOrders();
       req.log.info({ total: orders.length }, "[ADMIN] ADMIN_ORDERS_OK");
@@ -245,6 +246,33 @@ export function createApp({ orderService, mercadoPagoService, mailService }) {
         error: "INTERNAL_ERROR",
       });
     }
+  });
+
+  app.get("/admin/stats", requireAuth, requireRole("admin", "viewer"), async (req, res) => {
+   try{
+    const stats = await orderService.getStats();
+    req.log.info({ total: orders.length }, "[ADMIN] STATS_OK");
+    return res.status(200).json({ stats });
+   } catch (err) {
+    req.log.error({ err }, "[ADMIN] STATS_ERROR");
+    return res.status(500).json({
+      ok: false,
+      error: "INTERNAL_ERROR",
+    });
+  }
+    
+  });
+
+  app.post("/auth/login", async (req, res) => {
+    const { username, password } = req.body || {};
+
+    const result = await authService.login(username, password);
+
+    if (!result.ok) {
+      return res.status(result.status).json({ error: result.error });
+    }
+
+    return res.json({ token: result.token, user: result.user });
   });
 
   return app;
