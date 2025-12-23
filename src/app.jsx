@@ -6,6 +6,8 @@ import { Footer } from "./components/Footer";
 import { SuccessPage } from "./components/SuccessPage";
 import { PendingPage } from "./components/PendingPage";
 import { ErrorPage } from "./components/ErrorPage";
+import { PanelPage } from "./components/PanelPage";
+import { LoginPage } from "./components/LoginPage";
 
 
 export function App() {
@@ -26,6 +28,14 @@ export function App() {
     path === '/failure.html'
   ) {
     return <ErrorPage />;
+  }
+
+  if (path === '/panel' || path === 'panel.html') {
+    return <PanelPage />;
+  }
+
+  if (path === "/login" || path === "/login.html") {
+    return <LoginPage />;
   }
 
   return (
