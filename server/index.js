@@ -95,14 +95,11 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 
 let shuttingDown = false;
 
-async function shutdown(signal) {
+async function shutdown(signal, exitCode = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
 
-  log.warn(
-    { signal, uptimeMs: Date.now() - bootStartedAt },
-    "[APP] shutdown start"
-  );
+  log.warn({ signal, uptimeMs: Date.now() - bootStartedAt }, "[APP] shutdown start");
 
   await new Promise((resolve) => {
     server.close(() => resolve());
@@ -115,22 +112,20 @@ async function shutdown(signal) {
   } catch (err) {
     log.error({ err }, "[APP] db pool close failed");
   } finally {
-    log.warn(
-      { signal, bootId, durationMs: Date.now() - bootStartedAt },
-      "[APP] shutdown complete"
-    );
-    process.exit(0);
+    log.warn({ signal, bootId, durationMs: Date.now() - bootStartedAt }, "[APP] shutdown complete");
+    process.exit(exitCode);
   }
 }
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM", 0));
+process.on("SIGINT", () => shutdown("SIGINT", 0));
 
 process.on("unhandledRejection", (reason) => {
   log.fatal({ err: reason }, "[APP] unhandledRejection");
+  shutdown("unhandledRejection", 1).catch(() => process.exit(1));
 });
 
 process.on("uncaughtException", (err) => {
   log.fatal({ err }, "[APP] uncaughtException");
-  shutdown("uncaughtException").catch(() => process.exit(1));
+  shutdown("uncaughtException", 1).catch(() => process.exit(1));
 });
