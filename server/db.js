@@ -11,18 +11,21 @@ export function getDb() {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl:
-        process.env.NODE_ENV === "prod"
-          ? { rejectUnauthorized: false }
-          : false,
+      ssl: process.env.NODE_ENV === "prod" ? { rejectUnauthorized: false } : false,
+
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10_000,
     });
 
-    logger.info(
-      {
-        ssl: !!pool.options.ssl,
-      },
-      "[DB] pool initialized"
-    );
+    pool.on("error", (err) => {
+      logger.error({ err }, "[DB] pool error (idle client)");
+    });
+
+    logger.info({ ssl: !!pool.options.ssl }, "[DB] pool initialized");
   }
 
   return pool;
