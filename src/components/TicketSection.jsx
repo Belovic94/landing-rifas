@@ -237,6 +237,7 @@ export function TicketSection() {
         {/* CTA */}
         <button
           onClick={handleClick}
+          id="buy-tickets-button"
           disabled={isCtaDisabled}
           className="
             mt-6 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white
