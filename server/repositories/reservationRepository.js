@@ -48,7 +48,7 @@ export function createReservationRepository(db) {
      * - reason: 'EXPIRED' | 'ERROR' | 'CANCELLED' | 'PENDING'
      */
     async releaseOrderTickets(orderId, reason = "EXPIRED", client) {
-			const executor = client || db;
+			const executor = getExecutor(client);
 
 			const { rowCount } = await executor.query(
 				`
@@ -66,6 +66,68 @@ export function createReservationRepository(db) {
 			);
 
 			return rowCount;
-		}
+		},
+
+    async getPaidAmountTotal(client) {
+      const executor = getExecutor(client);
+      const { rows } = await executor.query(`
+        SELECT COALESCE(SUM(amount), 0)::bigint AS total
+        FROM orders
+        WHERE status = 'PAID'
+      `);
+      return Number(rows[0].total);
+    },
+
+    async getTicketsSold(client) {
+      const executor = getExecutor(client);
+      const { rows } = await executor.query(`
+        SELECT COUNT(*)::int AS tickets_sold
+        FROM order_tickets ot
+        JOIN orders o ON o.id = ot.order_id
+        WHERE o.status = 'PAID'
+          AND ot.released_at IS NULL
+      `);
+      return rows[0].tickets_sold;
+    },
+
+    async getTicketsPending(client) {
+      const executor = getExecutor(client);
+      const { rows } = await executor.query(`
+        SELECT COUNT(*)::int AS tickets_pending
+        FROM order_tickets ot
+        JOIN orders o ON o.id = ot.order_id
+        WHERE o.status = 'PENDING'
+          AND ot.released_at IS NULL
+      `);
+      return rows[0].tickets_pending;
+    },
+
+    async getSalesByPack(client) {
+      const executor = getExecutor(client);
+      const { rows } = await executor.query(`
+        WITH paid_orders AS (
+          SELECT o.id
+          FROM orders o
+          WHERE o.status = 'PAID'
+        ),
+        qty_per_order AS (
+          SELECT
+            ot.order_id,
+            COUNT(*) FILTER (WHERE ot.released_at IS NULL)::int AS qty
+          FROM order_tickets ot
+          JOIN paid_orders po ON po.id = ot.order_id
+          GROUP BY ot.order_id
+        )
+        SELECT qty, COUNT(*)::int AS count
+        FROM qty_per_order
+        WHERE qty IN (1,3,5,10,20)
+        GROUP BY qty
+        ORDER BY qty;
+      `);
+
+      const packs = { "1": 0, "3": 0, "5": 0, "10": 0, "20": 0 };
+      for (const r of rows) packs[String(r.qty)] = r.count;
+      return packs;
+    },
 	}
 }

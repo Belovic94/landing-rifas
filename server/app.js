@@ -249,17 +249,14 @@ export function createApp({ orderService, mercadoPagoService, mailService, authS
   });
 
   app.get("/admin/stats", requireAuth, requireRole("admin", "viewer"), async (req, res) => {
-    try{
+    try {
       const stats = await orderService.getStats();
-      req.log.info({ total: orders.length }, "[ADMIN] STATS_OK");
-      return res.status(200).json({ stats });
+      req.log.info({ stats }, "[ADMIN] STATS_OK");
+      return res.status(200).json({ ok: true, stats });
     } catch (err) {
       req.log.error({ err }, "[ADMIN] STATS_ERROR");
-      return res.status(500).json({
-        ok: false,
-        error: "INTERNAL_ERROR",
-      });
-    } 
+      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR" });
+    }
   });
 
   app.get("/admin/orders/export", requireAuth, requireRole("admin"), async (req, res) => {

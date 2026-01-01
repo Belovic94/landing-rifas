@@ -2,9 +2,8 @@ import {
   BanknotesIcon,
   TicketIcon,
   ClockIcon,
-  Squares2X2Icon
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-
 
 function formatARS(n) {
   return new Intl.NumberFormat("es-AR", {
@@ -36,7 +35,9 @@ function StatCard({ icon: Icon, label, value, tone = "neutral" }) {
   return (
     <div class={`rounded-2xl border ${toneCls} bg-white p-4 shadow-sm`}>
       <div class="flex items-center gap-3">
-        <div class={`h-10 w-10 rounded-2xl flex items-center justify-center ${iconWrap}`}>
+        <div
+          class={`h-10 w-10 rounded-2xl flex items-center justify-center ${iconWrap}`}
+        >
           <Icon class="h-5 w-5" />
         </div>
         <div class="min-w-0">
@@ -50,8 +51,77 @@ function StatCard({ icon: Icon, label, value, tone = "neutral" }) {
   );
 }
 
+function StatCardSkeleton({ tone = "neutral", isGrid = false }) {
+  const toneCls =
+    tone === "primary"
+      ? "border-fame-primary/25"
+      : tone === "accent"
+      ? "border-fame-accent/30"
+      : "border-fame-black/10";
 
-export function StatsPanel({ stats }) {
+  const iconWrap =
+    tone === "primary"
+      ? "bg-fame-primary/12"
+      : tone === "accent"
+      ? "bg-fame-accent/18"
+      : "bg-fame-soft/14";
+
+  return (
+    <div
+      class={`rounded-2xl border ${toneCls} bg-white p-4 shadow-sm animate-pulse`}
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <div class="flex items-center gap-3">
+        <div class={`h-10 w-10 rounded-2xl ${iconWrap}`} />
+        <div class="flex-1 min-w-0">
+          <div class="h-3 w-40 rounded bg-fame-black/10" />
+          {!isGrid ? (
+            <div class="mt-2 h-7 w-28 rounded bg-fame-black/10" />
+          ) : (
+            <div class="mt-3 grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5].map((k) => (
+                <div
+                  key={k}
+                  class="rounded-xl border border-fame-black/10 bg-fame-soft/10 px-2 py-2"
+                >
+                  <div class="h-3 w-6 mx-auto rounded bg-fame-black/10" />
+                  <div class="mt-2 h-4 w-8 mx-auto rounded bg-fame-black/10" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function StatsPanel({ stats, loading = false }) {
+  const safe = stats ?? {
+    revenue: 0,
+    soldTickets: 0,
+    pendingTickets: 0,
+    packs: { 1: 0, 3: 0, 5: 0, 10: 0, 20: 0 },
+  };
+
+  // Packs: por las dudas, si viene como strings
+  const packs = safe.packs ?? {};
+  const getPack = (n) => Number(packs[n] ?? packs[String(n)] ?? 0);
+
+  if (loading) {
+    return (
+      <aside class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+          <StatCardSkeleton tone="primary" />
+          <StatCardSkeleton tone="accent" />
+          <StatCardSkeleton tone="neutral" />
+          <StatCardSkeleton tone="neutral" isGrid />
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside class="space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
@@ -59,21 +129,21 @@ export function StatsPanel({ stats }) {
           icon={BanknotesIcon}
           tone="primary"
           label="Monto total acumulado"
-          value={formatARS(stats.revenue)}
+          value={formatARS(safe.revenue)}
         />
 
         <StatCard
           icon={TicketIcon}
           tone="accent"
           label="Rifas vendidas"
-          value={stats.soldTickets}
+          value={safe.soldTickets}
         />
 
         <StatCard
           icon={ClockIcon}
-          tone={stats.pendingTickets > 0 ? "accent" : "neutral"}
+          tone={safe.pendingTickets > 0 ? "accent" : "neutral"}
           label="Rifas pendientes"
-          value={stats.pendingTickets}
+          value={safe.pendingTickets}
         />
 
         <StatCard
@@ -86,8 +156,12 @@ export function StatsPanel({ stats }) {
                   key={n}
                   class="rounded-xl border border-fame-black/10 bg-fame-soft/10 px-2 py-2 text-center"
                 >
-                  <div class="text-[11px] font-semibold text-fame-black/70">{n}</div>
-                  <div class="text-sm font-extrabold text-fame-black">{stats.packs[n]}</div>
+                  <div class="text-[11px] font-semibold text-fame-black/70">
+                    {n}
+                  </div>
+                  <div class="text-sm font-extrabold text-fame-black">
+                    {getPack(n)}
+                  </div>
                 </div>
               ))}
             </div>
