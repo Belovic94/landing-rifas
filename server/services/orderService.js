@@ -142,6 +142,27 @@ export function createOrderService(db, orderRepo, reservationRepo) {
 
     async getOrders() {
       return orderRepo.getAllOrders();
+    },
+
+    async getStats() {
+      const client = await db.connect();
+      try {
+        const [amountTotal, ticketsSold, ticketsPending, packs] = await Promise.all([
+          reservationRepo.getPaidAmountTotal(client),
+          reservationRepo.getTicketsSold(client),
+          reservationRepo.getTicketsPending(client),
+          reservationRepo.getSalesByPack(client),
+        ]);
+
+        return {
+          amountTotal,
+          ticketsSold,
+          ticketsPending,
+          packs,
+        };
+      } finally {
+        client.release();
+      }
     }
   };
 }
