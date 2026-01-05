@@ -129,5 +129,35 @@ export function createReservationRepository(db) {
       for (const r of rows) packs[String(r.qty)] = r.count;
       return packs;
     },
+
+    async getTicketsStatus(ticketNumbers, client) {
+      const executor = getExecutor(client);
+
+      const { rows } = await executor.query(
+        `
+        SELECT
+          t.number AS ticket_number,
+
+          -- si hay reserva activa, estos campos existen
+          o.id AS order_id,
+          o.status AS order_status,
+          o.email,
+          o.amount,
+          o.created_at,
+          o.expires_at
+        FROM tickets t
+        LEFT JOIN order_tickets ot
+          ON ot.ticket_number = t.number
+        AND ot.released_at IS NULL
+        LEFT JOIN orders o
+          ON o.id = ot.order_id
+        WHERE t.number = ANY($1::text[])
+        `,
+        [ticketNumbers]
+      );
+
+      // Nota: si te pasan un ticket que NO existe en tickets, no aparece acá.
+      return rows;
+    },
 	}
 }

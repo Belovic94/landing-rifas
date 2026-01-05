@@ -11,6 +11,7 @@ import { createApp } from "./app.js";
 import { createMailService } from "./services/mailService.js";
 import { createUserRepository } from "./repositories/userRepository.js";
 import { createAuthService } from "./services/authService.js";
+import { createTicketService } from "./services/ticketService.js";
 
 const bootId = uuidv4();
 const bootStartedAt = Date.now();
@@ -39,6 +40,7 @@ const orderRepository = createOrderRepository(db);
 const orderService = createOrderService(db, orderRepository, reservationRepository);
 const userRepository = createUserRepository(db);
 const authService = createAuthService({ userRepository });
+const ticketService = createTicketService(reservationRepository);
 
 // MercadoPago (sin loguear accessToken)
 const mercadoPagoService = createMercadoPagoService({
@@ -75,7 +77,7 @@ try {
   process.exit(1);
 }
 
-const app = createApp({ orderService, mercadoPagoService, mailService, authService });
+const app = createApp({ orderService, mercadoPagoService, mailService, authService, ticketService });
 
 // Error handler (final)
 app.use((err, req, res, next) => {

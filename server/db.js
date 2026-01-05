@@ -102,7 +102,8 @@ export async function initDatabase(db, reset = false) {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_expires_at ON orders(expires_at);`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_order_tickets_order_id ON order_tickets(order_id);`);
-
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_paid_amount ON orders(amount) WHERE status = 'PAID'`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_order_tickets_active ON order_tickets(order_id) WHERE released_at IS NULL`);
     await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS ux_ticket_active_reservation
       ON order_tickets(ticket_number)

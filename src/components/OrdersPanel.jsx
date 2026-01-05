@@ -205,9 +205,9 @@ export function OrdersPanel({
 	}
 
   return (
-    <section class="rounded-2xl border border-fame-black/10 bg-white shadow-sm overflow-hidden">
+    <section class="rounded-2xl border border-fame-black/10 bg-white shadow-sm overflow-hidden flex flex-col h-[calc(100vh-80px)]">
       {/* Header sticky */}
-      <div class="sticky top-0 z-10 border-b border-fame-black/10 bg-white/90 backdrop-blur">
+      <div class="shrink-0 border-b border-fame-black/10 bg-white/90 backdrop-blur">
         <div class="flex items-center justify-between gap-3 px-4 py-3">
           <div class="min-w-0">
             <div class="font-extrabold text-fame-black leading-tight">Órdenes</div>
@@ -313,7 +313,7 @@ export function OrdersPanel({
       </div>
 
       {/* Body scrollable */}
-      <div class="px-4 py-3 overflow-y-auto max-h-[60vh] lg:max-h-[calc(100vh-260px)]">
+      <div class="flex-1 px-4 py-3 overflow-y-auto">
         {loading ? (
           <div class="rounded-2xl border border-fame-black/10 bg-white p-4 text-sm text-fame-black/70">
             Cargando órdenes…
