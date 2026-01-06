@@ -185,7 +185,7 @@ export function TicketLookupPanel({ token }) {
       </div>
 
       {/* BOTTOM (scroll): resultados */}
-      <div class="p-5 border-t border-fame-black/10 max-h-[280px] overflow-y-auto">
+      <div class="p-5 border-t border-fame-black/10 max-h-[300px] overflow-y-auto">
         {items.length > 0 ? (
           <div class="space-y-3">
             {items.map((it) => {
