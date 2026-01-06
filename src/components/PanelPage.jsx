@@ -75,7 +75,6 @@ function normalizeStats(payload) {
   };
 
   return {
-    // nombres como los usabas en el front
     revenue: Number(s.amountTotal ?? s.revenue ?? 0),
     soldTickets: Number(s.ticketsSold ?? s.soldTickets ?? 0),
     pendingTickets: Number(s.ticketsPending ?? s.pendingTickets ?? 0),
@@ -116,8 +115,7 @@ export function PanelPage() {
 
   useEffect(() => {
     if (!session?.token) return;
-
-    // stats y orders arrancan en paralelo, pero no se bloquean entre sí
+    
     loadStats({
       token: session.token,
       setStats,
