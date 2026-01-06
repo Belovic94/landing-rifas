@@ -5,6 +5,8 @@ import { logger } from "./utils/logger.js"
 import { requireAuth, requireRole } from "./middlewares/auth.js";
 import * as XLSX from "xlsx";
 
+const CUTOFF_MS = Date.UTC(2026, 0, 6, 23, 30, 0);
+
 const ALLOWED_ORIGINS = [
   "https://bono2026.fameargentina.org.ar",
   "http://localhost:5173",
@@ -356,6 +358,14 @@ export function createApp({ orderService, mercadoPagoService, mailService, authS
     }
 
     return res.json({ token: result.token, user: result.user });
+  });
+
+  app.get("/config", (req, res) => {
+    const now = Date.now();
+    res.json({
+      ticketsEnabled: now < CUTOFF_MS,
+      cutoffUtc: "2026-01-06T23:00:00Z",
+    });
   });
 
   return app;
