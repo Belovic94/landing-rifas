@@ -55,7 +55,7 @@ function requestLogger() {
   };
 }
 
-export function createApp({ orderService, mercadoPagoService, mailService, authService }) {
+export function createApp({ orderService, mercadoPagoService, mailService, authService, ticketService }) {
   const app = express();
 
   app.use(corsMiddleware());
@@ -321,6 +321,30 @@ export function createApp({ orderService, mercadoPagoService, mailService, authS
     }
   });
 
+  app.get("/admin/tickets/:ticket", async (req, res) => {
+    try {
+      const result = await ticketService.getTicketsStatus(req.params.ticket);
+      if (!result.ok) return res.status(400).json(result);
+
+      return res.status(200).json({ ok: true, item: result.items[0] });
+    } catch (err) {
+      req.log.error({ err }, "[ADMIN] TICKET_STATUS_ERROR");
+      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR" });
+    }
+  });
+
+  app.post("/admin/tickets/status", requireAuth, requireRole("admin", "viewer"), async (req, res) => {
+    try {
+      const { tickets } = req.body || {};
+      const result = await ticketService.getTicketsStatus(tickets);
+      if (!result.ok) return res.status(400).json(result);
+
+      return res.status(200).json(result);
+    } catch (err) {
+      req.log.error({ err }, "[ADMIN] TICKETS_STATUS_ERROR");
+      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR" });
+    }
+  });
 
   app.post("/auth/login", async (req, res) => {
     const { username, password } = req.body || {};
